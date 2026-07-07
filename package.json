@@ -8,20 +8,18 @@
     "db:generate": "pnpm --filter db generate",
     "db:migrate": "pnpm --filter db migrate",
     "db:seed": "pnpm --filter db seed",
+    "db:seed-1000": "pnpm --filter db exec tsx seed-1000.ts",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f",
-    "db:seed-1000": "pnpm --filter db exec tsx seed-1000.ts"
-  },
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "^11.10.0",
-      "onFail": "download"
-    }
+    "docker:logs": "docker-compose logs -f"
   },
   "type": "module",
   "devDependencies": {
     "turbo": "^2.10.3"
-  }
+  },
+  "engines": {
+    "node": ">=20.x",
+    "pnpm": ">=11.x"
+  },
+  "packageManager": "pnpm@11.10.0"
 }
