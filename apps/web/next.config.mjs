@@ -8,7 +8,8 @@ const nextConfig = {
   turbopack: {
     root: path.join(__dirname, '../../'),
   },
-  // HAPUS outputFileTracingRoot (jangan dipakai!)
+  // TAMBAHKAN INI: arahkan output ke .next di dalam apps/web
+  distDir: '.next',
 };
 
 export default nextConfig;
