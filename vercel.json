@@ -11,6 +11,5 @@
       "src": "/(.*)",
       "dest": "apps/web/$1"
     }
-  ],
-  "installCommand": "pnpm install"
+  ]
 }
