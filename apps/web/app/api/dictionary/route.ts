@@ -21,8 +21,10 @@ async function fetchFreeDictionary(word: string) {
     }));
 
     const first = meanings[0] || {};
-    const allSynonyms = meanings.flatMap(m => m.synonyms);
-    const allAntonyms = meanings.flatMap(m => m.antonyms);
+
+    // === PERBAIKAN: tambahkan tipe any pada parameter flatMap ===
+    const allSynonyms = meanings.flatMap((m: any) => m.synonyms);
+    const allAntonyms = meanings.flatMap((m: any) => m.antonyms);
 
     // === PARSE VERB FORMS ===
     let v1 = word;
