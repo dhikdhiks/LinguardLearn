@@ -9,7 +9,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = resolve(__filename, '..');
 
-config({ path: resolve(__dirname, '../../apps/web/.env.local') });
+// Hanya baca .env.local di development, bukan di production
+if (process.env.NODE_ENV === 'development') {
+  config({ path: resolve(__dirname, '../../apps/web/.env.local') });
+}
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
