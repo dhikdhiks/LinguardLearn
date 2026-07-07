@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  outputFileTracingRoot: require('path').join(__dirname, '../../'),
+  // Important for monorepo: helps Next.js find dependencies in the root
+  outputFileTracingRoot: import.meta.dirname,
+  
+  // Your other config options here
+  reactStrictMode: true,
 };
 
 export default nextConfig;
