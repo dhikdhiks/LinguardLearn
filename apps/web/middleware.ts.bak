@@ -1,0 +1,26 @@
+import { auth } from '@/lib/auth';
+import { NextResponse } from 'next/server';
+
+export default auth((req) => {
+  const isLoggedIn = !!req.auth;
+  const isOnDashboard = req.nextUrl.pathname.startsWith('/dashboard');
+
+  // Jika user belum login dan mencoba akses dashboard → redirect ke login
+  if (isOnDashboard && !isLoggedIn) {
+    const loginUrl = new URL('/login', req.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Jika user sudah login dan mencoba akses login/register → redirect ke dashboard
+  if (isLoggedIn && (req.nextUrl.pathname === '/login' || req.nextUrl.pathname === '/register')) {
+    const dashboardUrl = new URL('/dashboard', req.url);
+    return NextResponse.redirect(dashboardUrl);
+  }
+
+  return NextResponse.next();
+});
+
+// Tentukan route mana yang akan diproses oleh middleware
+export const config = {
+  matcher: ['/dashboard/:path*', '/login', '/register'],
+};
