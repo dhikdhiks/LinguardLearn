@@ -1,31 +1,34 @@
 'use server';
 
-import { db, vocabulary, userVocabulary } from 'db'; // db sudah mengekspor eq, and, dll.
-import { and } from 'drizzle-orm'; // hanya import yang belum ada di db
+import { db, vocabulary, userVocabulary, eq, and } from 'db';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+// ============================================================
+// 1. TAMBAH KATA KE DAFTAR BELAJAR (userVocabulary)
+// ============================================================
 export async function addVocabularyToUser(vocabularyId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
-  // Gunakan eq dari db (sudah re-export)
+  // Cek apakah sudah ada
   const existing = await db
     .select()
     .from(userVocabulary)
     .where(
       and(
-        db.eq(userVocabulary.userId, session.user.id),
-        db.eq(userVocabulary.vocabularyId, vocabularyId)
+        eq(userVocabulary.userId, session.user.id),
+        eq(userVocabulary.vocabularyId, vocabularyId)
       )
     )
     .limit(1);
 
   if (existing.length > 0) {
-    return { success: false, message: 'Sudah ada di daftar belajar.' };
+    return { success: false, message: 'Kata sudah ada di daftar belajar Anda.' };
   }
 
+  // Tambahkan
   await db.insert(userVocabulary).values({
     userId: session.user.id,
     vocabularyId: vocabularyId,
@@ -40,9 +43,33 @@ export async function addVocabularyToUser(vocabularyId: string) {
 
   revalidatePath('/dashboard');
   revalidatePath('/learn');
-  return { success: true, message: 'Berhasil ditambahkan!' };
+  return { success: true, message: 'Kata berhasil ditambahkan!' };
 }
 
+// ============================================================
+// 2. HAPUS KATA DARI DAFTAR BELAJAR
+// ============================================================
+export async function removeVocabularyFromUser(vocabularyId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
+  await db
+    .delete(userVocabulary)
+    .where(
+      and(
+        eq(userVocabulary.userId, session.user.id),
+        eq(userVocabulary.vocabularyId, vocabularyId)
+      )
+    );
+
+  revalidatePath('/dashboard');
+  revalidatePath('/learn');
+  return { success: true, message: 'Kata dihapus dari daftar belajar.' };
+}
+
+// ============================================================
+// 3. TAMBAH KATA BARU KE MASTER VOCABULARY
+// ============================================================
 export async function addNewWord(formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
@@ -63,7 +90,7 @@ export async function addNewWord(formData: FormData) {
   const existing = await db
     .select()
     .from(vocabulary)
-    .where(db.eq(vocabulary.word, word))
+    .where(eq(vocabulary.word, word))
     .limit(1);
 
   if (existing.length > 0) {
