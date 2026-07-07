@@ -19,8 +19,18 @@ if (!connectionString) {
 export const client = postgres(connectionString);
 export const db = drizzle(client, { schema });
 
-// Ekspor semua schema agar bisa di-import dari 'db'
-export * from './schema';
+// === EKSPOR SEMUA SCHEMA SECARA EKSPLISIT ===
+export {
+  users,
+  vocabulary,
+  userVocabulary,
+  learningSessions,
+  aiInteractions,
+  difficultyEnum,
+  partOfSpeechEnum,
+  wordStatusEnum,
+  sessionTypeEnum,
+} from './schema';
 
 // Re-export helper functions from drizzle-orm
 export { count, eq, and, or, sql, desc, asc, like, ilike, inArray, not, isNull, isNotNull } from 'drizzle-orm';
