@@ -1,5 +1,11 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "DATABASE_URL",
+    "NEXTAUTH_SECRET",
+    "AUTH_GOOGLE_ID",
+    "AUTH_GOOGLE_SECRET"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -9,10 +15,5 @@
       "cache": false,
       "persistent": true
     }
-    {
-  "globalEnv": [
-    "DATABASE_URL"
-  ]
-}
   }
 }
