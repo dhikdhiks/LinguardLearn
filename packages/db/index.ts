@@ -27,9 +27,7 @@ export {
   learningSessions,
   aiInteractions,
   difficultyEnum,
-  partOfSpeechEnum,
-  wordStatusEnum,
-  sessionTypeEnum,
+  partOfSpeechEnum
 } from './schema';
 
 // Re-export helper functions from drizzle-orm
