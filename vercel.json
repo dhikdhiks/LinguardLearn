@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "apps/web/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "apps/web/$1"
+    }
+  ],
+  "installCommand": "npx --yes pnpm@9.15.0 install --no-frozen-lockfile",
+  "buildCommand": "npx --yes pnpm@9.15.0 build",
+  "outputDirectory": "apps/web/.next"
+}
