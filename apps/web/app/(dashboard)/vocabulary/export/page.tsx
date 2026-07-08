@@ -25,10 +25,10 @@ export default function ExportPage() {
       } else {
         // CSV
         const headers = ['word', 'translation', 'definition', 'partOfSpeech', 'difficulty', 'phonetic', 'exampleSentence'];
-        const rows = data.map((w: any) => [
-          w.word, w.translation, w.definition || '', w.partOfSpeech || '', w.difficulty || '', w.phonetic || '', w.exampleSentence || ''
-        ]);
-        const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const rows: string[][] = data.map((w: any) => [
+  // ...
+]);
+const csvContent = [headers.join(','), ...rows.map((r: string[]) => r.join(','))].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, phrases } from 'db';
+import { db, phrases, eq } from 'db';
 import { auth } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
