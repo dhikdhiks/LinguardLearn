@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BookOpen, Home, PlusCircle, LogOut, Upload, Brain } from 'lucide-react';
+import { BookOpen, Home, PlusCircle, LogOut, Moon, Sun, Upload, Brain, MessageSquare } from 'lucide-react';
 import { logout } from '@/app/actions/auth';
 
 interface NavbarProps {
