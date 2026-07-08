@@ -10,9 +10,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = resolve(__filename, '..');
 
 // Hanya baca .env.local di development, bukan di production
-if (process.env.NODE_ENV === 'development') {
-  config({ path: resolve(__dirname, '../../apps/web/.env.local') });
-}
+config({
+  path: resolve(__dirname, '../../apps/web/.env.local'),
+  override: false,
+});
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -30,7 +31,8 @@ export {
   learningSessions,
   aiInteractions,
   difficultyEnum,
-  partOfSpeechEnum
+  partOfSpeechEnum,
+  phrases
 } from './schema';
 
 // Re-export helper functions from drizzle-orm

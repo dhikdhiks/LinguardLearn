@@ -26,6 +26,9 @@ export default function Navbar({ user }: NavbarProps) {
             <NavLink href="/vocabulary/add" icon={<PlusCircle className="w-4 h-4" />}>Tambah</NavLink>
             <NavLink href="/vocabulary/import-batch" icon={<Upload className="w-4 h-4" />}>Import</NavLink>
             <NavLink href="/quiz" icon={<Brain className="w-4 h-4" />}>Kuis</NavLink>
+            <NavLink href="/phrases" icon={<MessageSquare className="w-4 h-4" />}>
+  Kalimat
+</NavLink>
           </div>
 
           <div className="flex items-center gap-3">

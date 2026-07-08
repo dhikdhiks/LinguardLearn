@@ -1,14 +1,16 @@
-import { db, vocabulary } from 'db';
+import { db, vocabulary, phrases } from 'db';
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import FocusWords from '@/components/FocusWords';
+import PhrasesSection from '@/components/PhrasesSection';
 
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
 
   const allWords = await db.select().from(vocabulary);
+  const allPhrases = await db.select().from(phrases);
 
   const total = allWords.length;
   const learned = allWords.filter(w => w.isLearned).length;
@@ -65,6 +67,9 @@ export default async function DashboardPage() {
       {/* Focus Words (Belum Dihafal, Intermediate/Advanced) */}
       <FocusWords />
 
+      {/* ===== PHRASES SECTION (10 Random Phrases) ===== */}
+      <PhrasesSection phrases={allPhrases} />
+
       {/* Tombol Aksi */}
       <div className="mt-6 flex flex-wrap gap-3">
         <Link href="/vocabulary/add" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
@@ -75,6 +80,9 @@ export default async function DashboardPage() {
         </Link>
         <Link href="/quiz" className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
           🧠 Kuis
+        </Link>
+        <Link href="/phrases" className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+          💬 Kalimat
         </Link>
       </div>
     </div>

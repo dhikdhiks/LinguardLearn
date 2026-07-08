@@ -150,3 +150,23 @@ export const aiInteractions = pgTable(
     userAIIndex: index('user_ai_idx').on(table.userId),
   })
 );
+
+export const phrases = pgTable(
+  'phrases',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    phrase: text('phrase').notNull().unique(),          // kalimat asli
+    translation: text('translation').notNull(),        // terjemahan Indonesia
+    phonetic: text('phonetic'),                        // cara baca
+    difficulty: difficultyEnum('difficulty').default('beginner'),
+    isFavorite: boolean('is_favorite').default(false),
+    isLearned: boolean('is_learned').default(false),
+    tags: text('tags').array().default([]),
+    notes: text('notes'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    phraseIdx: uniqueIndex('phrase_idx').on(table.phrase),
+  })
+);
