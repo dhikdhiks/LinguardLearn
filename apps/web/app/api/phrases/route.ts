@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, phrases } from 'db';
+import { db, phrases, eq } from 'db';
 import { auth } from '@/lib/auth';
 
 export async function GET() {
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   const existing = await db
     .select()
     .from(phrases)
-    .where(db.eq(phrases.phrase, phrase))
+    .where(eq(phrases.phrase, phrase))
     .limit(1);
 
   if (existing.length > 0) {

@@ -13,11 +13,16 @@ export async function GET(request: Request) {
   const limit = parseInt(searchParams.get('limit') || '10', 10);
   const difficulty = searchParams.get('difficulty') || null;
 
-  let query = db.select().from(phrases);
-  if (difficulty) {
-    query = query.where(sql`${phrases.difficulty} = ${difficulty}`);
-  }
-  const result = await query.orderBy(sql`RANDOM()`).limit(limit);
+let query = db.select().from(phrases);
 
-  return NextResponse.json(result);
+const result = difficulty
+  ? await query
+      .where(sql`${phrases.difficulty} = ${difficulty}`)
+      .orderBy(sql`RANDOM()`)
+      .limit(limit)
+  : await query
+      .orderBy(sql`RANDOM()`)
+      .limit(limit);
+
+return NextResponse.json(result);
 }
