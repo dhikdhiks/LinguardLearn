@@ -57,6 +57,9 @@ export default function Navbar({ user }: NavbarProps) {
           <MobileNavLink href="/vocabulary/add" icon={<PlusCircle className="w-5 h-5" />}>Tambah</MobileNavLink>
           <MobileNavLink href="/vocabulary/import-batch" icon={<Upload className="w-5 h-5" />}>Import</MobileNavLink>
           <MobileNavLink href="/quiz" icon={<Brain className="w-5 h-5" />}>Kuis</MobileNavLink>
+          <MobileNavLink href="/phrases" icon={<MessageSquare className="w-5 h-5" />}>
+  Kalimat
+</MobileNavLink>
         </div>
       </div>
     </nav>

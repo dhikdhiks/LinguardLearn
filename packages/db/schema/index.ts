@@ -155,9 +155,9 @@ export const phrases = pgTable(
   'phrases',
   {
     id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-    phrase: text('phrase').notNull().unique(),          // kalimat asli
-    translation: text('translation').notNull(),        // terjemahan Indonesia
-    phonetic: text('phonetic'),                        // cara baca
+    phrase: text('phrase').notNull().unique(),
+    translation: text('translation').notNull(),
+    phonetic: text('phonetic'),
     difficulty: difficultyEnum('difficulty').default('beginner'),
     isFavorite: boolean('is_favorite').default(false),
     isLearned: boolean('is_learned').default(false),

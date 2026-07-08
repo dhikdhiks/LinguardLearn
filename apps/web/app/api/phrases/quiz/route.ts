@@ -10,14 +10,21 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
+  const difficulties = searchParams.getAll('difficulties');
   const limit = parseInt(searchParams.get('limit') || '10', 10);
-  const difficulty = searchParams.get('difficulty') || null;
 
-  let query = db.select().from(phrases);
-  if (difficulty) {
-    query = query.where(sql`${phrases.difficulty} = ${difficulty}`);
+  if (difficulties.length === 0) {
+    return NextResponse.json({ error: 'Pilih minimal satu tingkat kesulitan' }, { status: 400 });
   }
-  const result = await query.orderBy(sql`RANDOM()`).limit(limit);
+
+  const result = await db
+    .select()
+    .from(phrases)
+    .where(
+      sql`${phrases.difficulty} IN (${sql.join(difficulties.map(d => sql`${d}`), sql`, `)})`
+    )
+    .orderBy(sql`RANDOM()`)
+    .limit(limit);
 
   return NextResponse.json(result);
 }

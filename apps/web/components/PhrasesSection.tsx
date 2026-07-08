@@ -21,9 +21,7 @@ export default function PhrasesSection({ phrases }: { phrases: Phrase[] }) {
     setRandomPhrases(shuffled.slice(0, 10));
   };
 
-  if (phrases.length === 0) {
-    return null;
-  }
+  if (phrases.length === 0) return null;
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6">
