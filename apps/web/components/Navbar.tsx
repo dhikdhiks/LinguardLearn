@@ -62,7 +62,7 @@ export default function Navbar({ user }: NavbarProps) {
             </NavLink>
 
             {/* Export Dropdown */}
-            <div className="relative group">
+            {/* <div className="relative group">
               <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all">
                 <Download className="w-4 h-4" />
                 Ekspor
@@ -81,7 +81,7 @@ export default function Navbar({ user }: NavbarProps) {
                   💬 Ekspor Phrases
                 </Link>
               </div>
-            </div>
+            </div> */}
 
             {/* Import/Export Dropdown */}
 <div className="relative group">
