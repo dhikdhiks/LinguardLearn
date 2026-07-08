@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import { Providers } from './providers';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'LinguaVault - Kamus Vocabulary',
-  description: 'Personal English vocabulary dictionary',
+  title: 'LinguaLearn - Belajar Inggris dengan AI',
+  description: 'Platform belajar bahasa Inggris personal dengan kecerdasan buatan.',
 };
 
 export default function RootLayout({
@@ -15,9 +16,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id">
+    <html lang="id" suppressHydrationWarning>
       <body className={inter.className}>
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
