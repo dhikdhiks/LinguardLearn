@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, phrases } from 'db';
+import { db, phrases, eq } from 'db'; // <-- IMPORT eq
 import { auth } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
@@ -9,24 +9,34 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { phrase, translation, phonetic, category, notes } = body;
+  const { phrase, translation, phonetic, difficulty } = body;
 
   if (!phrase || !translation) {
-    return NextResponse.json({ error: 'Phrase and translation are required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Phrase and translation are required' },
+      { status: 400 }
+    );
   }
 
-  // Check duplicate
-  const existing = await db.select().from(phrases).where(db.eq(phrases.phrase, phrase)).limit(1);
+  // Cek duplikat
+  const existing = await db
+    .select()
+    .from(phrases)
+    .where(eq(phrases.phrase, phrase)) // <-- pakai eq, bukan db.eq
+    .limit(1);
+
   if (existing.length > 0) {
-    return NextResponse.json({ error: `Phrase "${phrase}" already exists` }, { status: 400 });
+    return NextResponse.json(
+      { error: `Phrase "${phrase}" already exists` },
+      { status: 400 }
+    );
   }
 
   await db.insert(phrases).values({
     phrase,
     translation,
     phonetic: phonetic || null,
-    category: category || 'general',
-    notes: notes || null,
+    difficulty: difficulty || 'beginner',
     createdAt: new Date(),
     updatedAt: new Date(),
   });
