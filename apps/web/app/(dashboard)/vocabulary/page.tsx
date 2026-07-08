@@ -12,6 +12,9 @@ import {
   PlusCircle,
 } from 'lucide-react';
 
+// ============================================================
+// 1. TIPE DATA
+// ============================================================
 interface Word {
   id: string;
   word: string;
@@ -35,18 +38,27 @@ interface Word {
   tags: string[];
 }
 
+// ============================================================
+// 2. KOMPONEN UTAMA
+// ============================================================
 export default function VocabularyPage() {
   const router = useRouter();
 
+  // State untuk data
   const [allWords, setAllWords] = useState<Word[]>([]);
   const [filteredWords, setFilteredWords] = useState<Word[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // State untuk search & filter
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedParts, setSelectedParts] = useState<string[]>([]);
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
   const [filterTag, setFilterTag] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'learned' | 'unlearned'>('all');
 
+  // ============================================================
+  // 3. FETCH DATA DARI API
+  // ============================================================
   const fetchWords = async () => {
     const res = await fetch('/api/vocabulary');
     const data = await res.json();
@@ -59,6 +71,9 @@ export default function VocabularyPage() {
     fetchWords();
   }, []);
 
+  // ============================================================
+  // 4. TOGGLE FUNCTIONS
+  // ============================================================
   const togglePart = (part: string) => {
     setSelectedParts((prev) =>
       prev.includes(part) ? prev.filter((p) => p !== part) : [...prev, part]
@@ -103,8 +118,13 @@ export default function VocabularyPage() {
     }
   };
 
+  // ============================================================
+  // 5. LOGIKA SEARCH & FILTER
+  // ============================================================
   useEffect(() => {
     let result = allWords;
+
+    // Filter berdasarkan kata kunci
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       result = result.filter(
@@ -114,18 +134,41 @@ export default function VocabularyPage() {
           (w.definition && w.definition.toLowerCase().includes(term))
       );
     }
+
+    // Filter berdasarkan Part of Speech (checkbox)
     if (selectedParts.length > 0) {
       result = result.filter((w) => selectedParts.includes(w.partOfSpeech || ''));
     }
+
+    // Filter berdasarkan Difficulty (checkbox)
     if (selectedDifficulties.length > 0) {
       result = result.filter((w) => selectedDifficulties.includes(w.difficulty || ''));
     }
+
+    // Filter berdasarkan Tag
     if (filterTag) {
       result = result.filter((w) => w.tags && w.tags.includes(filterTag));
     }
-    setFilteredWords(result);
-  }, [searchTerm, selectedParts, selectedDifficulties, filterTag, allWords]);
 
+    // Filter berdasarkan status (sudah/belum dihafal)
+    if (filterStatus === 'learned') {
+      result = result.filter((w) => w.isLearned);
+    } else if (filterStatus === 'unlearned') {
+      result = result.filter((w) => !w.isLearned);
+    }
+
+    // Sorting: yang belum dihafal di atas, yang sudah dihafal di bawah
+    result.sort((a, b) => {
+      if (a.isLearned === b.isLearned) return 0;
+      return a.isLearned ? 1 : -1;
+    });
+
+    setFilteredWords(result);
+  }, [searchTerm, selectedParts, selectedDifficulties, filterTag, filterStatus, allWords]);
+
+  // ============================================================
+  // 6. RENDER LOADING
+  // ============================================================
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -134,11 +177,15 @@ export default function VocabularyPage() {
     );
   }
 
+  // Ambil semua tag unik untuk dropdown
   const allTags = [...new Set(allWords.flatMap((w) => w.tags || []))];
 
+  // ============================================================
+  // 7. RENDER UTAMA
+  // ============================================================
   return (
     <div>
-      {/* Header */}
+      {/* ===== HEADER ===== */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">📚 Kamus Saya</h1>
@@ -154,101 +201,120 @@ export default function VocabularyPage() {
         </button>
       </div>
 
-      {/* Search & Filter */}
-{/* Filter - UI Lebih Rapi */}
-<div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
-  <div className="flex flex-col gap-3">
-    {/* Search Input (sudah ada) */}
-    <div className="flex-1 relative">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-      <input
-        type="text"
-        placeholder="Cari kata, arti, atau definisi..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-      />
-      {searchTerm && (
-        <button
-          onClick={() => setSearchTerm('')}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      )}
-    </div>
-
-    {/* Filter row - UI Lebih Baik */}
-    <div className="flex flex-wrap items-center gap-4 mt-2">
-      {/* Jenis Kata */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Jenis:</span>
-        {['noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction', 'interjection'].map((part) => (
-          <label
-            key={part}
-            className={`inline-flex items-center gap-1 text-sm px-2 py-1 rounded-full transition cursor-pointer ${
-              selectedParts.includes(part)
-                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-            }`}
-          >
+      {/* ===== SEARCH & FILTER ===== */}
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
+        <div className="flex flex-col gap-3">
+          {/* Search Input */}
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
-              type="checkbox"
-              checked={selectedParts.includes(part)}
-              onChange={() => togglePart(part)}
-              className="form-checkbox h-3 w-3 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+              type="text"
+              placeholder="Cari kata, arti, atau definisi..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
-            <span>{part}</span>
-          </label>
-        ))}
-      </div>
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
 
-      {/* Tingkat */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tingkat:</span>
-        {['beginner', 'intermediate', 'advanced'].map((diff) => (
-          <label
-            key={diff}
-            className={`inline-flex items-center gap-1 text-sm px-2 py-1 rounded-full transition cursor-pointer ${
-              selectedDifficulties.includes(diff)
-                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-            }`}
-          >
-            <input
-              type="checkbox"
-              checked={selectedDifficulties.includes(diff)}
-              onChange={() => toggleDifficulty(diff)}
-              className="form-checkbox h-3 w-3 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-            />
-            <span>{diff}</span>
-          </label>
-        ))}
-      </div>
+          {/* Filter row - UI Lebih Baik */}
+          <div className="flex flex-wrap items-center gap-4 mt-2">
+            {/* Jenis Kata */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Jenis:</span>
+              {['noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction', 'interjection'].map(
+                (part) => (
+                  <label
+                    key={part}
+                    className={`inline-flex items-center gap-1 text-sm px-2 py-1 rounded-full transition cursor-pointer ${
+                      selectedParts.includes(part)
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                        : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedParts.includes(part)}
+                      onChange={() => togglePart(part)}
+                      className="form-checkbox h-3 w-3 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    <span>{part}</span>
+                  </label>
+                )
+              )}
+            </div>
 
-      {/* Tag */}
-      {allTags.length > 0 && (
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tag:</span>
-          <select
-            value={filterTag}
-            onChange={(e) => setFilterTag(e.target.value)}
-            className="px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-          >
-            <option value="">Semua</option>
-            {allTags.map((tag) => (
-              <option key={tag} value={tag}>
-                {tag}
-              </option>
-            ))}
-          </select>
+            {/* Tingkat */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tingkat:</span>
+              {['beginner', 'intermediate', 'advanced'].map((diff) => (
+                <label
+                  key={diff}
+                  className={`inline-flex items-center gap-1 text-sm px-2 py-1 rounded-full transition cursor-pointer ${
+                    selectedDifficulties.includes(diff)
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                      : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedDifficulties.includes(diff)}
+                    onChange={() => toggleDifficulty(diff)}
+                    className="form-checkbox h-3 w-3 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  />
+                  <span>{diff}</span>
+                </label>
+              ))}
+            </div>
+
+            {/* Status */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Status:</span>
+              {['all', 'unlearned', 'learned'].map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setFilterStatus(status as any)}
+                  className={`px-3 py-1 text-sm rounded-full transition ${
+                    filterStatus === status
+                      ? 'bg-blue-600 text-white dark:bg-blue-700'
+                      : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  {status === 'all' ? 'Semua' : status === 'learned' ? '✅ Sudah' : '📖 Belum'}
+                </button>
+              ))}
+            </div>
+
+            {/* Tag */}
+            {allTags.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tag:</span>
+                <select
+                  value={filterTag}
+                  onChange={(e) => setFilterTag(e.target.value)}
+                  className="px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                >
+                  <option value="">Semua</option>
+                  {allTags.map((tag) => (
+                    <option key={tag} value={tag}>
+                      {tag}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
         </div>
-      )}
-    </div>
-  </div>
-</div>
+      </div>
 
-      {/* Grid */}
+      {/* ===== GRID KARTU KATA ===== */}
       {filteredWords.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
           <p className="text-gray-500 dark:text-gray-400 text-lg">Tidak ada kata yang cocok.</p>
@@ -263,7 +329,7 @@ export default function VocabularyPage() {
               key={word.id}
               className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition group"
             >
-              {/* Header */}
+              {/* ---- HEADER KARTU ---- */}
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -346,7 +412,7 @@ export default function VocabularyPage() {
                 </div>
               </div>
 
-              {/* Translation & Definition */}
+              {/* ---- TERJEMAHAN & DEFINISI ---- */}
               <div className="mt-3 space-y-1">
                 <p className="text-gray-700 dark:text-gray-300">
                   <span className="font-medium text-gray-500 dark:text-gray-400">Arti:</span>{' '}
@@ -365,7 +431,7 @@ export default function VocabularyPage() {
                 )}
               </div>
 
-              {/* Verb Forms */}
+              {/* ---- VERB FORMS ---- */}
               {(word.v1 || word.v2 || word.v3 || word.v_ing || word.v_s) && (
                 <div className="mt-3 flex flex-wrap gap-2 text-xs bg-gray-50 dark:bg-gray-700 p-2 rounded-lg">
                   <span className="font-medium text-gray-500 dark:text-gray-400">Verb:</span>
@@ -397,7 +463,7 @@ export default function VocabularyPage() {
                 </div>
               )}
 
-              {/* Plural */}
+              {/* ---- PLURAL ---- */}
               {word.plural_form && (
                 <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
                   <span className="font-medium text-gray-500 dark:text-gray-400">Plural:</span>{' '}
@@ -405,7 +471,7 @@ export default function VocabularyPage() {
                 </div>
               )}
 
-              {/* Synonyms & Antonyms */}
+              {/* ---- SINONIM & ANTONIM ---- */}
               <div className="mt-2 flex flex-wrap gap-2 text-xs">
                 {word.synonyms && word.synonyms.length > 0 && (
                   <span className="bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
@@ -419,7 +485,7 @@ export default function VocabularyPage() {
                 )}
               </div>
 
-              {/* Notes */}
+              {/* ---- CATATAN ---- */}
               {word.notes && (
                 <div className="mt-2 text-xs text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-2">
                   📝 {word.notes}

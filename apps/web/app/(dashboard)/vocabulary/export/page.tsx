@@ -15,7 +15,11 @@ export default function ExportPage() {
       const data = await res.json();
 
       if (format === 'json') {
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const exportData = data.map((w: any) => ({
+          word: w.word,
+          translation: w.translation,
+        }));
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -24,11 +28,9 @@ export default function ExportPage() {
         URL.revokeObjectURL(url);
       } else {
         // CSV
-        const headers = ['word', 'translation', 'definition', 'partOfSpeech', 'difficulty', 'phonetic', 'exampleSentence'];
-        const rows: string[][] = data.map((w: any) => [
-  // ...
-]);
-const csvContent = [headers.join(','), ...rows.map((r: string[]) => r.join(','))].join('\n');
+        const headers = ['word', 'translation'];
+        const rows = data.map((w: any) => [w.word, w.translation]);
+        const csvContent = [headers.join(','), ...rows.map((r: string[]) => r.join(','))].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -46,12 +48,15 @@ const csvContent = [headers.join(','), ...rows.map((r: string[]) => r.join(','))
 
   return (
     <div className="max-w-2xl mx-auto">
-      <button onClick={() => router.push('/vocabulary')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4">
+      <button
+        onClick={() => router.push('/vocabulary')}
+        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white mb-4"
+      >
         <ArrowLeft className="w-4 h-4" /> Kembali
       </button>
-      <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">📤 Ekspor Kosakata</h1>
-        <p className="text-gray-500 text-sm mb-6">Ekspor semua kosakata ke file JSON atau CSV.</p>
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">📤 Ekspor Kosakata</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">Ekspor semua kosakata ke file JSON atau CSV.</p>
         <div className="flex gap-4">
           <button
             onClick={() => handleExport('json')}

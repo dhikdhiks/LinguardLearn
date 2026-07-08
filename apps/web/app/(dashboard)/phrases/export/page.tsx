@@ -15,7 +15,11 @@ export default function ExportPhrasesPage() {
       const data = await res.json();
 
       if (format === 'json') {
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const exportData = data.map((p: any) => ({
+          phrase: p.phrase,
+          translation: p.translation,
+        }));
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -23,16 +27,8 @@ export default function ExportPhrasesPage() {
         a.click();
         URL.revokeObjectURL(url);
       } else {
-        // CSV
-        const headers = ['phrase', 'translation', 'phonetic', 'difficulty', 'tags', 'notes'];
-        const rows = data.map((p: any) => [
-          p.phrase,
-          p.translation,
-          p.phonetic || '',
-          p.difficulty || '',
-          (p.tags || []).join('; '),
-          p.notes || '',
-        ]);
+        const headers = ['phrase', 'translation'];
+        const rows = data.map((p: any) => [p.phrase, p.translation]);
         const csvContent = [headers.join(','), ...rows.map((r: string[]) => r.join(','))].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, phrases, eq } from 'db'; // <-- tambahkan eq
+import { db, phrases, eq } from 'db';
 import { auth } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
@@ -15,23 +15,21 @@ export async function POST(req: NextRequest) {
 
   let imported = 0;
   for (const item of data) {
-    const { phrase, translation, phonetic, difficulty, tags, notes } = item;
+    const { phrase, translation } = item;
     if (!phrase || !translation) continue;
 
     const existing = await db
       .select()
       .from(phrases)
-      .where(eq(phrases.phrase, phrase)) // <-- ganti db.eq dengan eq
+      .where(eq(phrases.phrase, phrase))
       .limit(1);
 
     if (existing.length === 0) {
       await db.insert(phrases).values({
         phrase,
         translation,
-        phonetic: phonetic || null,
-        difficulty: difficulty || 'beginner',
-        tags: tags || [],
-        notes: notes || null,
+        phonetic: '',
+        difficulty: 'beginner',
         createdAt: new Date(),
         updatedAt: new Date(),
       });

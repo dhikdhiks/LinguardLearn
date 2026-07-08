@@ -15,19 +15,22 @@ export default async function DashboardPage() {
   // Vocabulary stats
   const totalWords = allWords.length;
   const learnedWords = allWords.filter((w) => w.isLearned).length;
-  const unlearnedWords = allWords.filter((w) => !w.isLearned).length;
+  const unlearnedWords = allWords.filter((w) => !w.isLearned);
   const favoriteWords = allWords.filter((w) => w.isFavorite).length;
   const wordPercentage = totalWords > 0 ? Math.round((learnedWords / totalWords) * 100) : 0;
 
   // Phrases stats
   const totalPhrases = allPhrases.length;
   const learnedPhrases = allPhrases.filter((p) => p.isLearned).length;
-  const unlearnedPhrases = allPhrases.filter((p) => !p.isLearned).length;
+  const unlearnedPhrases = allPhrases.filter((p) => !p.isLearned);
   const favoritePhrases = allPhrases.filter((p) => p.isFavorite).length;
   const phrasePercentage = totalPhrases > 0 ? Math.round((learnedPhrases / totalPhrases) * 100) : 0;
 
   // Random word of the day
   const randomWord = allWords.length > 0 ? allWords[Math.floor(Math.random() * allWords.length)] : null;
+
+  // Filter phrases untuk hanya yang belum dihafal
+  const unlearnedPhrasesList = allPhrases.filter(p => !p.isLearned);
 
   return (
     <div>
@@ -54,7 +57,7 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-4 gap-2 mt-3 text-xs text-gray-500 dark:text-gray-400">
           <div>Total: {totalWords}</div>
           <div className="text-green-600">Dihafal: {learnedWords}</div>
-          <div className="text-orange-500">Belum: {unlearnedWords}</div>
+          <div className="text-orange-500">Belum: {unlearnedWords.length}</div>
           <div className="text-yellow-500">⭐ {favoriteWords}</div>
         </div>
       </div>
@@ -76,7 +79,7 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-4 gap-2 mt-3 text-xs text-gray-500 dark:text-gray-400">
           <div>Total: {totalPhrases}</div>
           <div className="text-green-600">Dihafal: {learnedPhrases}</div>
-          <div className="text-orange-500">Belum: {unlearnedPhrases}</div>
+          <div className="text-orange-500">Belum: {unlearnedPhrases.length}</div>
           <div className="text-yellow-500">⭐ {favoritePhrases}</div>
         </div>
       </div>
@@ -110,11 +113,11 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Focus Words */}
+      {/* Focus Words - hanya yang belum dihafal */}
       <FocusWords />
 
-      {/* Random Phrases Section */}
-      <PhrasesSection phrases={allPhrases} />
+      {/* Random Phrases Section - hanya yang belum dihafal */}
+      <PhrasesSection phrases={unlearnedPhrasesList} />
 
       {/* Tombol Aksi */}
       <div className="mt-6 flex flex-wrap gap-3">

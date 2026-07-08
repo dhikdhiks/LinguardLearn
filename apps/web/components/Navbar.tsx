@@ -82,6 +82,28 @@ export default function Navbar({ user }: NavbarProps) {
                 </Link>
               </div>
             </div>
+
+            {/* Import/Export Dropdown */}
+<div className="relative group">
+  <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all">
+    <Upload className="w-4 h-4" />
+    <span>Impor/Ekspor</span>
+  </button>
+  <div className="absolute left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+    <Link href="/vocabulary/import-batch" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-t-lg">
+      📥 Impor Vocabulary
+    </Link>
+    <Link href="/phrases/import-batch" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30">
+      📥 Impor Phrases
+    </Link>
+    <Link href="/vocabulary/export" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30">
+      📤 Ekspor Vocabulary
+    </Link>
+    <Link href="/phrases/export" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-b-lg">
+      📤 Ekspor Phrases
+    </Link>
+  </div>
+</div>
           </div>
 
           {/* User Menu */}
