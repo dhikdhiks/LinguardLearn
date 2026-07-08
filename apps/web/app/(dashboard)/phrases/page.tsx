@@ -39,8 +39,8 @@ export default function PhrasesPage() {
   }, []);
 
   const toggleDifficulty = (diff: string) => {
-    setSelectedDifficulties(prev =>
-      prev.includes(diff) ? prev.filter(d => d !== diff) : [...prev, diff]
+    setSelectedDifficulties((prev) =>
+      prev.includes(diff) ? prev.filter((d) => d !== diff) : [...prev, diff]
     );
   };
 
@@ -81,42 +81,52 @@ export default function PhrasesPage() {
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       result = result.filter(
-        p =>
+        (p) =>
           p.phrase.toLowerCase().includes(term) ||
           p.translation.toLowerCase().includes(term)
       );
     }
     if (selectedDifficulties.length > 0) {
-      result = result.filter(p => selectedDifficulties.includes(p.difficulty || ''));
+      result = result.filter((p) => selectedDifficulties.includes(p.difficulty || ''));
     }
     if (filterTag) {
-      result = result.filter(p => p.tags && p.tags.includes(filterTag));
+      result = result.filter((p) => p.tags && p.tags.includes(filterTag));
     }
     setFilteredPhrases(result);
   }, [searchTerm, selectedDifficulties, filterTag, allPhrases]);
 
-  if (loading) return <div className="text-center py-12">⏳ Memuat...</div>;
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500 dark:text-gray-400">⏳ Memuat kalimat...</p>
+      </div>
+    );
+  }
 
-  const allTags = [...new Set(allPhrases.flatMap(p => p.tags || []))];
+  const allTags = [...new Set(allPhrases.flatMap((p) => p.tags || []))];
 
   return (
     <div>
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">💬 Kalimat Sehari-hari</h1>
-          <p className="text-gray-500 text-sm">{filteredPhrases.length} dari {allPhrases.length} kalimat</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">💬 Kalimat Sehari-hari</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            {filteredPhrases.length} dari {allPhrases.length} kalimat
+          </p>
         </div>
         <button
           onClick={() => router.push('/phrases/add')}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm"
         >
           <PlusCircle className="w-4 h-4" /> Tambah Kalimat
         </button>
       </div>
 
-      {/* Filter */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
+      {/* Search & Filter */}
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
         <div className="flex flex-col gap-3">
+          {/* Search */}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -124,39 +134,58 @@ export default function PhrasesPage() {
               placeholder="Cari kalimat atau terjemahan..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
             />
             {searchTerm && (
-              <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
                 <X className="w-4 h-4" />
               </button>
             )}
           </div>
-          <div className="flex flex-wrap gap-4">
-            <div>
-              <span className="text-sm font-medium text-gray-700 mr-2">Tingkat:</span>
-              {['beginner', 'intermediate', 'advanced'].map(diff => (
-                <label key={diff} className="inline-flex items-center mr-2">
+
+          {/* Filter row */}
+          <div className="flex flex-wrap items-center gap-4 mt-2">
+            {/* Difficulty */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tingkat:</span>
+              {['beginner', 'intermediate', 'advanced'].map((diff) => (
+                <label
+                  key={diff}
+                  className={`inline-flex items-center gap-1 text-sm px-2 py-1 rounded-full transition cursor-pointer ${
+                    selectedDifficulties.includes(diff)
+                      ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
+                      : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                  }`}
+                >
                   <input
                     type="checkbox"
                     checked={selectedDifficulties.includes(diff)}
                     onChange={() => toggleDifficulty(diff)}
-                    className="form-checkbox h-4 w-4 text-blue-600 rounded"
+                    className="form-checkbox h-3 w-3 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
                   />
-                  <span className="ml-1 text-sm text-gray-700">{diff}</span>
+                  <span>{diff}</span>
                 </label>
               ))}
             </div>
+
+            {/* Tags */}
             {allTags.length > 0 && (
-              <div>
-                <span className="text-sm font-medium text-gray-700 mr-2">Tag:</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tag:</span>
                 <select
                   value={filterTag}
                   onChange={(e) => setFilterTag(e.target.value)}
-                  className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+                  className="px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                 >
                   <option value="">Semua</option>
-                  {allTags.map(tag => <option key={tag} value={tag}>{tag}</option>)}
+                  {allTags.map((tag) => (
+                    <option key={tag} value={tag}>
+                      {tag}
+                    </option>
+                  ))}
                 </select>
               </div>
             )}
@@ -164,55 +193,107 @@ export default function PhrasesPage() {
         </div>
       </div>
 
+      {/* Grid */}
       {filteredPhrases.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl border border-gray-100">
-          <p className="text-gray-500 text-lg">Tidak ada kalimat yang cocok.</p>
+        <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+          <p className="text-gray-500 dark:text-gray-400 text-lg">Tidak ada kalimat yang cocok.</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+            Coba ubah kata kunci atau filter, atau tambah kalimat baru.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredPhrases.map((p) => (
-            <div key={p.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition group">
+            <div
+              key={p.id}
+              className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition group"
+            >
+              {/* Header */}
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-xl font-bold text-gray-900">{p.phrase}</h2>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                      {p.phrase}
+                    </h2>
                     <button
                       onClick={() => handleSpeak(p.phrase)}
-                      className="p-1 text-gray-400 hover:text-blue-600 transition"
+                      className="p-1 text-gray-400 hover:text-purple-600 transition rounded-full hover:bg-purple-50 dark:hover:bg-purple-900"
+                      title="Dengar pengucapan"
                     >
                       <Volume2 className="w-4 h-4" />
                     </button>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
-                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                    <span
+                      className={`text-xs px-2 py-1 rounded ${
+                        p.difficulty === 'beginner'
+                          ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                          : p.difficulty === 'intermediate'
+                          ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
+                          : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
+                      }`}
+                    >
                       {p.difficulty || 'beginner'}
                     </span>
-                    {p.phonetic && <span className="text-xs text-gray-400 font-mono">{p.phonetic}</span>}
+                    {p.phonetic && (
+                      <span className="text-xs text-gray-400 font-mono">{p.phonetic}</span>
+                    )}
                   </div>
                   {p.tags && p.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {p.tags.map(tag => <span key={tag} className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">#{tag}</span>)}
+                      {p.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
                     </div>
                   )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0 ml-2">
-                  <button onClick={() => toggleFavorite(p.id, p.isFavorite)} className="p-1.5 text-gray-400 hover:text-yellow-500">
+                  <button
+                    onClick={() => toggleFavorite(p.id, p.isFavorite)}
+                    className="p-1.5 text-gray-400 hover:text-yellow-500 transition"
+                    title={p.isFavorite ? 'Hapus dari favorit' : 'Tambah ke favorit'}
+                  >
                     {p.isFavorite ? '⭐' : '☆'}
                   </button>
-                  <button onClick={() => toggleLearned(p.id, p.isLearned)} className={`p-1.5 transition ${p.isLearned ? 'text-green-500' : 'text-gray-400 hover:text-green-500'}`}>
+                  <button
+                    onClick={() => toggleLearned(p.id, p.isLearned)}
+                    className={`p-1.5 transition ${
+                      p.isLearned ? 'text-green-500' : 'text-gray-400 hover:text-green-500'
+                    }`}
+                    title={p.isLearned ? 'Tandai belum hafal' : 'Tandai sudah hafal'}
+                  >
                     {p.isLearned ? '✅' : '📖'}
                   </button>
-                  <Link href={`/phrases/edit/${p.id}`} className="p-1.5 text-gray-400 hover:text-blue-600 transition">
+                  <Link
+                    href={`/phrases/edit/${p.id}`}
+                    className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900 rounded transition"
+                    title="Edit"
+                  >
                     <Pencil className="w-4 h-4" />
                   </Link>
-                  <button onClick={() => handleDelete(p.id, p.phrase)} className="p-1.5 text-gray-400 hover:text-red-600 transition">
+                  <button
+                    onClick={() => handleDelete(p.id, p.phrase)}
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded transition"
+                    title="Hapus"
+                  >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
+
+              {/* Translation & Notes */}
               <div className="mt-3">
-                <p className="text-gray-700">{p.translation}</p>
-                {p.notes && <p className="text-xs text-gray-400 mt-1 border-t border-gray-100 pt-1">📝 {p.notes}</p>}
+                <p className="text-gray-700 dark:text-gray-300">{p.translation}</p>
+                {p.notes && (
+                  <p className="text-xs text-gray-400 border-t border-gray-100 dark:border-gray-700 mt-2 pt-1">
+                    📝 {p.notes}
+                  </p>
+                )}
               </div>
             </div>
           ))}

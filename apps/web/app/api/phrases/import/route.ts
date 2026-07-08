@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     const existing = await db
       .select()
       .from(phrases)
-      .where(eq(phrases.phrase, phrase)) // <-- pakai eq, bukan db.eq
+      .where(eq(phrases.phrase, phrase)) // <-- ganti db.eq dengan eq
       .limit(1);
 
     if (existing.length === 0) {
