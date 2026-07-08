@@ -17,7 +17,7 @@ import {
   Menu,
   X,
 } from 'lucide-react';
-import { signOut } from '@/lib/auth';
+import { signOut } from "next-auth/react";
 
 interface NavbarProps {
   user: {
@@ -105,20 +105,13 @@ export default function Navbar({ user }: NavbarProps) {
                 {user.name || 'User'}
               </span>
             </div>
-            <form
-              action={async () => {
-                'use server';
-                await signOut({ redirectTo: '/' });
-              }}
-            >
-              <button
-                type="submit"
-                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
-            </form>
+<button
+  onClick={() => signOut({ callbackUrl: '/' })}
+  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+>
+  <LogOut className="w-4 h-4" />
+  <span className="hidden sm:inline">Logout</span>
+</button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-gray-500 hover:text-gray-700"
