@@ -170,10 +170,10 @@ export default function QuizVocabularyPage() {
         <div className="text-center py-4">
           <p className="text-sm text-gray-400 mb-1">Terjemahan Indonesia</p>
           <h2 className="text-3xl font-bold text-gray-900">{currentWord.translation}</h2>
-          <div className="mt-4">
+          {/* <div className="mt-4">
             <p className="text-sm text-gray-400">Jenis Kata</p>
             <p className="text-lg font-semibold text-blue-600">{currentWord.partOfSpeech || '?'}</p>
-          </div>
+          </div> */}
           {currentWord.definition && (
             <details className="mt-4 text-sm text-gray-400">
               <summary className="cursor-pointer hover:text-gray-600">💡 Clue (definisi)</summary>
