@@ -107,11 +107,14 @@ export default function PhrasesPage() {
       result = result.filter((p) => !p.isLearned);
     }
 
-    // Sorting: yang belum dihafal di atas, yang sudah dihafal di bawah
-    result.sort((a, b) => {
-      if (a.isLearned === b.isLearned) return 0;
-      return a.isLearned ? 1 : -1;
-    });
+// Sorting: yang belum dihafal di atas, yang sudah dihafal di bawah
+result.sort((a, b) => {
+  if (a.isLearned !== b.isLearned) {
+    return a.isLearned ? 1 : -1;
+  }
+  // Jika status sama, urutkan berdasarkan phrase (A-Z)
+  return a.phrase.localeCompare(b.phrase);
+});
 
     setFilteredPhrases(result);
   }, [searchTerm, selectedDifficulties, filterTag, filterStatus, allPhrases]);

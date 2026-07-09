@@ -137,11 +137,15 @@ export default function VocabularyPage() {
       result = result.filter((w) => !w.isLearned);
     }
 
-    // Sorting: yang belum dihafal di atas, yang sudah dihafal di bawah
-    result.sort((a, b) => {
-      if (a.isLearned === b.isLearned) return 0;
-      return a.isLearned ? 1 : -1;
-    });
+// Sorting: yang belum dihafal di atas, yang sudah dihafal di bawah
+result.sort((a, b) => {
+  // Pertama urutkan berdasarkan status hafalan
+  if (a.isLearned !== b.isLearned) {
+    return a.isLearned ? 1 : -1;
+  }
+  // Jika status sama, urutkan berdasarkan kata (A-Z)
+  return a.word.localeCompare(b.word);
+});
 
     setFilteredWords(result);
   }, [searchTerm, selectedParts, selectedDifficulties, filterTag, filterStatus, allWords]);
