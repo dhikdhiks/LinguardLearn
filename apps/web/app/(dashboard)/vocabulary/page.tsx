@@ -137,17 +137,20 @@ export default function VocabularyPage() {
       result = result.filter((w) => !w.isLearned);
     }
 
-// Sorting: yang belum dihafal di atas, yang sudah dihafal di bawah
-result.sort((a, b) => {
-  // Pertama urutkan berdasarkan status hafalan
-  if (a.isLearned !== b.isLearned) {
-    return a.isLearned ? 1 : -1;
-  }
-  // Jika status sama, urutkan berdasarkan kata (A-Z)
-  return a.word.localeCompare(b.word);
-});
+    // ============================================================
+    // SORTING: Yang Belum Dihafal di Atas, Yang Sudah di Bawah
+    // ============================================================
+    // BUAT SALINAN BARU SEBELUM SORTING (Hindari mutasi)
+    const sorted = [...result].sort((a, b) => {
+      // 1. Urutkan berdasarkan status hafalan
+      if (a.isLearned !== b.isLearned) {
+        return a.isLearned ? 1 : -1; // true -> di bawah, false -> di atas
+      }
+      // 2. Jika status sama, urutkan berdasarkan kata (A-Z)
+      return a.word.localeCompare(b.word);
+    });
 
-    setFilteredWords(result);
+    setFilteredWords(sorted);
   }, [searchTerm, selectedParts, selectedDifficulties, filterTag, filterStatus, allWords]);
 
   if (loading) {

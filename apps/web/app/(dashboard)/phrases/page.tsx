@@ -107,16 +107,20 @@ export default function PhrasesPage() {
       result = result.filter((p) => !p.isLearned);
     }
 
-// Sorting: yang belum dihafal di atas, yang sudah dihafal di bawah
-result.sort((a, b) => {
-  if (a.isLearned !== b.isLearned) {
-    return a.isLearned ? 1 : -1;
-  }
-  // Jika status sama, urutkan berdasarkan phrase (A-Z)
-  return a.phrase.localeCompare(b.phrase);
-});
+    // ============================================================
+    // SORTING: Yang Belum Dihafal di Atas, Yang Sudah di Bawah
+    // ============================================================
+    // BUAT SALINAN BARU SEBELUM SORTING (Hindari mutasi)
+    const sorted = [...result].sort((a, b) => {
+      // 1. Urutkan berdasarkan status hafalan
+      if (a.isLearned !== b.isLearned) {
+        return a.isLearned ? 1 : -1; // true -> di bawah, false -> di atas
+      }
+      // 2. Jika status sama, urutkan berdasarkan phrase (A-Z)
+      return a.phrase.localeCompare(b.phrase);
+    });
 
-    setFilteredPhrases(result);
+    setFilteredPhrases(sorted);
   }, [searchTerm, selectedDifficulties, filterTag, filterStatus, allPhrases]);
 
   if (loading) {
