@@ -17,7 +17,7 @@ import {
   Menu,
   X,
 } from 'lucide-react';
-import { signOut } from "next-auth/react";
+import { signOut } from '@/lib/auth';
 
 interface NavbarProps {
   user: {
@@ -57,53 +57,50 @@ export default function Navbar({ user }: NavbarProps) {
             <NavLink href="/phrases" icon={<MessageSquare className="w-4 h-4" />}>
               Kalimat
             </NavLink>
-            <NavLink href="/quiz" icon={<Brain className="w-4 h-4" />}>
-              Kuis
-            </NavLink>
 
-            {/* Export Dropdown */}
-            {/* <div className="relative group">
+            {/* Quiz Dropdown */}
+            <div className="relative group">
               <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all">
-                <Download className="w-4 h-4" />
-                Ekspor
+                <Brain className="w-4 h-4" />
+                <span>Kuis</span>
               </button>
               <div className="absolute left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
                 <Link
-                  href="/vocabulary/export"
+                  href="/quiz/vocabulary"
                   className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-t-lg"
                 >
-                  📚 Ekspor Vocabulary
+                  📚 Kuis Vocabulary
                 </Link>
                 <Link
-                  href="/phrases/export"
+                  href="/quiz/phrases"
                   className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-b-lg"
                 >
-                  💬 Ekspor Phrases
+                  💬 Kuis Phrases
                 </Link>
               </div>
-            </div> */}
+            </div>
 
             {/* Import/Export Dropdown */}
-<div className="relative group">
-  <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all">
-    <Upload className="w-4 h-4" />
-    <span>Impor/Ekspor</span>
-  </button>
-  <div className="absolute left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-    <Link href="/vocabulary/import-batch" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-t-lg">
-      📥 Impor Vocabulary
-    </Link>
-    <Link href="/phrases/import-batch" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30">
-      📥 Impor Phrases
-    </Link>
-    <Link href="/vocabulary/export" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30">
-      📤 Ekspor Vocabulary
-    </Link>
-    <Link href="/phrases/export" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-b-lg">
-      📤 Ekspor Phrases
-    </Link>
-  </div>
-</div>
+            <div className="relative group">
+              <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all">
+                <Upload className="w-4 h-4" />
+                <span>Impor/Ekspor</span>
+              </button>
+              <div className="absolute left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                <Link href="/vocabulary/import-batch" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-t-lg">
+                  📥 Impor Vocabulary
+                </Link>
+                <Link href="/phrases/import-batch" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30">
+                  📥 Impor Phrases
+                </Link>
+                <Link href="/vocabulary/export" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30">
+                  📤 Ekspor Vocabulary
+                </Link>
+                <Link href="/phrases/export" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-b-lg">
+                  📤 Ekspor Phrases
+                </Link>
+              </div>
+            </div>
           </div>
 
           {/* User Menu */}
@@ -112,12 +109,7 @@ export default function Navbar({ user }: NavbarProps) {
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
             >
-              {mounted &&
-                (theme === 'dark' ? (
-                  <Sun className="w-5 h-5" />
-                ) : (
-                  <Moon className="w-5 h-5" />
-                ))}
+              {mounted && (theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />)}
             </button>
             <div className="hidden sm:flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center text-white text-sm font-medium">
@@ -127,13 +119,20 @@ export default function Navbar({ user }: NavbarProps) {
                 {user.name || 'User'}
               </span>
             </div>
-<button
-  onClick={() => signOut({ callbackUrl: '/' })}
-  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
->
-  <LogOut className="w-4 h-4" />
-  <span className="hidden sm:inline">Logout</span>
-</button>
+            <form
+              action={async () => {
+                'use server';
+                await signOut({ redirectTo: '/' });
+              }}
+            >
+              <button
+                type="submit"
+                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            </form>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-gray-500 hover:text-gray-700"
@@ -155,10 +154,19 @@ export default function Navbar({ user }: NavbarProps) {
             <MobileNavLink href="/phrases" icon={<MessageSquare className="w-5 h-5" />}>
               Kalimat
             </MobileNavLink>
-            <MobileNavLink href="/quiz" icon={<Brain className="w-5 h-5" />}>
-              Kuis
+            <MobileNavLink href="/quiz/vocabulary" icon={<Brain className="w-5 h-5" />}>
+              Kuis Vocabulary
+            </MobileNavLink>
+            <MobileNavLink href="/quiz/phrases" icon={<Brain className="w-5 h-5" />}>
+              Kuis Phrases
             </MobileNavLink>
             <div className="pl-4 space-y-1">
+              <MobileNavLink href="/vocabulary/import-batch" icon={<Upload className="w-4 h-4" />}>
+                Impor Vocabulary
+              </MobileNavLink>
+              <MobileNavLink href="/phrases/import-batch" icon={<Upload className="w-4 h-4" />}>
+                Impor Phrases
+              </MobileNavLink>
               <MobileNavLink href="/vocabulary/export" icon={<Download className="w-4 h-4" />}>
                 Ekspor Vocabulary
               </MobileNavLink>

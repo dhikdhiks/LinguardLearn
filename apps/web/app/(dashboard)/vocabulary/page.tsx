@@ -11,10 +11,9 @@ import {
   Trash2,
   PlusCircle,
 } from 'lucide-react';
+import AnimatedList from '@/components/AnimatedList';
+import AnimatedItem from '@/components/AnimatedItem';
 
-// ============================================================
-// 1. TIPE DATA
-// ============================================================
 interface Word {
   id: string;
   word: string;
@@ -38,27 +37,19 @@ interface Word {
   tags: string[];
 }
 
-// ============================================================
-// 2. KOMPONEN UTAMA
-// ============================================================
 export default function VocabularyPage() {
   const router = useRouter();
 
-  // State untuk data
   const [allWords, setAllWords] = useState<Word[]>([]);
   const [filteredWords, setFilteredWords] = useState<Word[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // State untuk search & filter
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedParts, setSelectedParts] = useState<string[]>([]);
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
   const [filterTag, setFilterTag] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'learned' | 'unlearned'>('all');
 
-  // ============================================================
-  // 3. FETCH DATA DARI API
-  // ============================================================
   const fetchWords = async () => {
     const res = await fetch('/api/vocabulary');
     const data = await res.json();
@@ -71,9 +62,6 @@ export default function VocabularyPage() {
     fetchWords();
   }, []);
 
-  // ============================================================
-  // 4. TOGGLE FUNCTIONS
-  // ============================================================
   const togglePart = (part: string) => {
     setSelectedParts((prev) =>
       prev.includes(part) ? prev.filter((p) => p !== part) : [...prev, part]
@@ -118,13 +106,9 @@ export default function VocabularyPage() {
     }
   };
 
-  // ============================================================
-  // 5. LOGIKA SEARCH & FILTER
-  // ============================================================
   useEffect(() => {
     let result = allWords;
 
-    // Filter berdasarkan kata kunci
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       result = result.filter(
@@ -135,22 +119,18 @@ export default function VocabularyPage() {
       );
     }
 
-    // Filter berdasarkan Part of Speech (checkbox)
     if (selectedParts.length > 0) {
       result = result.filter((w) => selectedParts.includes(w.partOfSpeech || ''));
     }
 
-    // Filter berdasarkan Difficulty (checkbox)
     if (selectedDifficulties.length > 0) {
       result = result.filter((w) => selectedDifficulties.includes(w.difficulty || ''));
     }
 
-    // Filter berdasarkan Tag
     if (filterTag) {
       result = result.filter((w) => w.tags && w.tags.includes(filterTag));
     }
 
-    // Filter berdasarkan status (sudah/belum dihafal)
     if (filterStatus === 'learned') {
       result = result.filter((w) => w.isLearned);
     } else if (filterStatus === 'unlearned') {
@@ -166,26 +146,15 @@ export default function VocabularyPage() {
     setFilteredWords(result);
   }, [searchTerm, selectedParts, selectedDifficulties, filterTag, filterStatus, allWords]);
 
-  // ============================================================
-  // 6. RENDER LOADING
-  // ============================================================
   if (loading) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-500 dark:text-gray-400">⏳ Memuat data kamus...</p>
-      </div>
-    );
+    return <div className="text-center py-12">⏳ Memuat data...</div>;
   }
 
-  // Ambil semua tag unik untuk dropdown
   const allTags = [...new Set(allWords.flatMap((w) => w.tags || []))];
 
-  // ============================================================
-  // 7. RENDER UTAMA
-  // ============================================================
   return (
     <div>
-      {/* ===== HEADER ===== */}
+      {/* HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">📚 Kamus Saya</h1>
@@ -201,10 +170,9 @@ export default function VocabularyPage() {
         </button>
       </div>
 
-      {/* ===== SEARCH & FILTER ===== */}
+      {/* SEARCH & FILTER */}
       <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
         <div className="flex flex-col gap-3">
-          {/* Search Input */}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -224,9 +192,8 @@ export default function VocabularyPage() {
             )}
           </div>
 
-          {/* Filter row - UI Lebih Baik */}
           <div className="flex flex-wrap items-center gap-4 mt-2">
-            {/* Jenis Kata */}
+            {/* Part of Speech */}
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Jenis:</span>
               {['noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction', 'interjection'].map(
@@ -251,7 +218,7 @@ export default function VocabularyPage() {
               )}
             </div>
 
-            {/* Tingkat */}
+            {/* Difficulty */}
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tingkat:</span>
               {['beginner', 'intermediate', 'advanced'].map((diff) => (
@@ -277,22 +244,39 @@ export default function VocabularyPage() {
             {/* Status */}
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Status:</span>
-              {['all', 'unlearned', 'learned'].map((status) => (
-                <button
-                  key={status}
-                  onClick={() => setFilterStatus(status as any)}
-                  className={`px-3 py-1 text-sm rounded-full transition ${
-                    filterStatus === status
-                      ? 'bg-blue-600 text-white dark:bg-blue-700'
-                      : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  {status === 'all' ? 'Semua' : status === 'learned' ? '✅ Sudah' : '📖 Belum'}
-                </button>
-              ))}
+              <button
+                onClick={() => setFilterStatus('all')}
+                className={`px-3 py-1 text-sm rounded-full transition ${
+                  filterStatus === 'all'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                }`}
+              >
+                Semua
+              </button>
+              <button
+                onClick={() => setFilterStatus('unlearned')}
+                className={`px-3 py-1 text-sm rounded-full transition ${
+                  filterStatus === 'unlearned'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                }`}
+              >
+                📖 Belum
+              </button>
+              <button
+                onClick={() => setFilterStatus('learned')}
+                className={`px-3 py-1 text-sm rounded-full transition ${
+                  filterStatus === 'learned'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                }`}
+              >
+                ✅ Sudah
+              </button>
             </div>
 
-            {/* Tag */}
+            {/* Tags */}
             {allTags.length > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tag:</span>
@@ -314,22 +298,16 @@ export default function VocabularyPage() {
         </div>
       </div>
 
-      {/* ===== GRID KARTU KATA ===== */}
+      {/* GRID */}
       {filteredWords.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
           <p className="text-gray-500 dark:text-gray-400 text-lg">Tidak ada kata yang cocok.</p>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-            Coba ubah kata kunci atau filter, atau tambah kata baru.
-          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <AnimatedList className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filteredWords.map((word) => (
-            <div
-              key={word.id}
-              className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition group"
-            >
-              {/* ---- HEADER KARTU ---- */}
+            <AnimatedItem key={word.id} className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition group">
+              {/* Header dengan tombol aksi */}
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -339,7 +317,7 @@ export default function VocabularyPage() {
                     <button
                       onClick={() => handleSpeak(word.word)}
                       className="p-1 text-gray-400 hover:text-blue-600 transition rounded-full hover:bg-blue-50 dark:hover:bg-blue-900"
-                      title="Dengar pengucapan"
+                      title="Dengar"
                     >
                       <Volume2 className="w-4 h-4" />
                     </button>
@@ -359,19 +337,12 @@ export default function VocabularyPage() {
                     >
                       {word.difficulty || 'beginner'}
                     </span>
-                    {word.phonetic && (
-                      <span className="text-xs text-gray-400 font-mono">
-                        {word.phonetic}
-                      </span>
-                    )}
+                    {word.phonetic && <span className="text-xs text-gray-400 font-mono">{word.phonetic}</span>}
                   </div>
                   {word.tags && word.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1">
                       {word.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full"
-                        >
+                        <span key={tag} className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
                           #{tag}
                         </span>
                       ))}
@@ -382,7 +353,7 @@ export default function VocabularyPage() {
                   <button
                     onClick={() => toggleFavorite(word.id, word.isFavorite)}
                     className="p-1.5 text-gray-400 hover:text-yellow-500 transition"
-                    title={word.isFavorite ? 'Hapus dari favorit' : 'Tambah ke favorit'}
+                    title={word.isFavorite ? 'Hapus favorit' : 'Tambah favorit'}
                   >
                     {word.isFavorite ? '⭐' : '☆'}
                   </button>
@@ -412,66 +383,37 @@ export default function VocabularyPage() {
                 </div>
               </div>
 
-              {/* ---- TERJEMAHAN & DEFINISI ---- */}
+              {/* Isi */}
               <div className="mt-3 space-y-1">
                 <p className="text-gray-700 dark:text-gray-300">
-                  <span className="font-medium text-gray-500 dark:text-gray-400">Arti:</span>{' '}
-                  {word.translation}
+                  <span className="font-medium text-gray-500 dark:text-gray-400">Arti:</span> {word.translation}
                 </p>
                 {word.definition && (
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    <span className="font-medium text-gray-500 dark:text-gray-400">Definisi:</span>{' '}
-                    {word.definition}
+                    <span className="font-medium text-gray-500 dark:text-gray-400">Definisi:</span> {word.definition}
                   </p>
                 )}
                 {word.exampleSentence && (
-                  <p className="text-sm text-gray-500 italic mt-1">
-                    "{word.exampleSentence}"
-                  </p>
+                  <p className="text-sm text-gray-500 italic mt-1">"{word.exampleSentence}"</p>
                 )}
               </div>
 
-              {/* ---- VERB FORMS ---- */}
+              {/* Verb forms */}
               {(word.v1 || word.v2 || word.v3 || word.v_ing || word.v_s) && (
                 <div className="mt-3 flex flex-wrap gap-2 text-xs bg-gray-50 dark:bg-gray-700 p-2 rounded-lg">
                   <span className="font-medium text-gray-500 dark:text-gray-400">Verb:</span>
-                  {word.v1 && (
-                    <span>
-                      <span className="text-gray-400">V1</span> {word.v1}
-                    </span>
-                  )}
-                  {word.v2 && (
-                    <span>
-                      <span className="text-gray-400">V2</span> {word.v2}
-                    </span>
-                  )}
-                  {word.v3 && (
-                    <span>
-                      <span className="text-gray-400">V3</span> {word.v3}
-                    </span>
-                  )}
-                  {word.v_ing && (
-                    <span>
-                      <span className="text-gray-400">-ing</span> {word.v_ing}
-                    </span>
-                  )}
-                  {word.v_s && (
-                    <span>
-                      <span className="text-gray-400">-s</span> {word.v_s}
-                    </span>
-                  )}
+                  {word.v1 && <span><span className="text-gray-400">V1</span> {word.v1}</span>}
+                  {word.v2 && <span><span className="text-gray-400">V2</span> {word.v2}</span>}
+                  {word.v3 && <span><span className="text-gray-400">V3</span> {word.v3}</span>}
+                  {word.v_ing && <span><span className="text-gray-400">-ing</span> {word.v_ing}</span>}
+                  {word.v_s && <span><span className="text-gray-400">-s</span> {word.v_s}</span>}
                 </div>
               )}
-
-              {/* ---- PLURAL ---- */}
               {word.plural_form && (
                 <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
-                  <span className="font-medium text-gray-500 dark:text-gray-400">Plural:</span>{' '}
-                  {word.plural_form}
+                  <span className="font-medium text-gray-500 dark:text-gray-400">Plural:</span> {word.plural_form}
                 </div>
               )}
-
-              {/* ---- SINONIM & ANTONIM ---- */}
               <div className="mt-2 flex flex-wrap gap-2 text-xs">
                 {word.synonyms && word.synonyms.length > 0 && (
                   <span className="bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
@@ -484,16 +426,14 @@ export default function VocabularyPage() {
                   </span>
                 )}
               </div>
-
-              {/* ---- CATATAN ---- */}
               {word.notes && (
                 <div className="mt-2 text-xs text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-2">
                   📝 {word.notes}
                 </div>
               )}
-            </div>
+            </AnimatedItem>
           ))}
-        </div>
+        </AnimatedList>
       )}
     </div>
   );
