@@ -37,6 +37,25 @@ function clearAttempts(key: string) {
 }
 
 // ============================================
+// PESAN ERROR AUTH — bedakan "konfigurasi server"
+// (AUTH_SECRET/DATABASE_URL belum diatur) vs kredensial salah
+// ============================================
+function authErrorMessage(error: unknown, fallback = 'Email atau password salah.'): string {
+  if (error instanceof AuthError) {
+    const code =
+      (error as AuthError & { code?: string }).code ||
+      (error as AuthError & { type?: string }).type ||
+      '';
+    // AUTH_SECRET / DATABASE_URL belum diset di server (mis. Vercel)
+    if (code === 'configuration' || error.name === 'MissingSecret') {
+      return 'Konfigurasi server belum lengkap (AUTH_SECRET / DATABASE_URL belum diatur di server). Coba lagi nanti.';
+    }
+    return fallback;
+  }
+  return 'Terjadi kesalahan server. Coba lagi nanti.';
+}
+
+// ============================================
 // VALIDASI
 // ============================================
 function validateRegister(input: {
@@ -109,7 +128,7 @@ export async function registerUser(
   } catch (error) {
     // signIn melempar AuthError (redirect) — biarkan lolos
     if (error instanceof AuthError) {
-      return { error: 'Registrasi gagal. Coba lagi.' };
+      return { error: authErrorMessage(error, 'Registrasi gagal. Coba lagi.') };
     }
     // Next.js redirect error juga harus lolos
     if (error && typeof error === 'object' && 'digest' in error) {
@@ -150,7 +169,7 @@ export async function loginUser(
     return { success: true };
   } catch (error) {
     if (error instanceof AuthError) {
-      return { error: 'Email atau password salah.' };
+      return { error: authErrorMessage(error) };
     }
     if (error && typeof error === 'object' && 'digest' in error) {
       throw error; // redirect Next.js

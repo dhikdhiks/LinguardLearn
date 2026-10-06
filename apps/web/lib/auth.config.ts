@@ -8,6 +8,9 @@ export const authConfig = {
   // Provider sebenarnya ditambahkan di lib/auth.ts (Node runtime);
   // di middleware cukup array kosong untuk validasi config
   providers: [],
+  // Dipercaya host di proxy/deployment (Vercel & lainnya) — mencegah
+  // error "UntrustedHost". AUTH_TRUST_HOST=true juga bisa dipakai.
+  trustHost: true,
   pages: {
     signIn: '/login',
   },

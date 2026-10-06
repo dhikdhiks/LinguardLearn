@@ -1,9 +1,40 @@
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { AuthError } from 'next-auth';
 import { signIn } from '@/lib/auth';
 import LoginForm from './login-form';
 
-export default function LoginPage() {
+// Peta kode error NextAuth → pesan Indonesia yang mudah dipahami.
+// Kode ini juga muncul via ?error=... saat alur Google gagal.
+const ERROR_MESSAGES: Record<string, string> = {
+  Configuration:
+    'Gagal masuk: konfigurasi server belum lengkap (AUTH_SECRET / DATABASE_URL belum diatur di server).',
+  MissingSecret:
+    'Gagal masuk: AUTH_SECRET belum diatur di server.',
+  AccessDenied: 'Akses login ditolak. Coba lagi.',
+  OAuthSignin: 'Gagal memulai login Google. Coba lagi.',
+  OAuthCallback: 'Gagal menyelesaikan login Google. Coba lagi.',
+  OAuthCreateAccount: 'Gagal membuat akun Google. Coba lagi.',
+  EmailCreateAccount: 'Gagal membuat akun. Coba lagi.',
+  CallbackRouteError: 'Terjadi masalah saat login Google. Coba lagi.',
+  OAuthAccountNotLinked:
+    'Email Google ini sudah terhubung dengan akun lain. Gunakan metode login yang sesuai.',
+  CredentialsSignin: 'Email atau password salah.',
+};
+
+function getErrorMessage(code?: string): string | null {
+  if (!code) return null;
+  return ERROR_MESSAGES[code] || 'Login gagal. Coba lagi.';
+}
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+  const externalError = getErrorMessage(error);
   const googleEnabled = !!process.env.AUTH_GOOGLE_ID && !!process.env.AUTH_GOOGLE_SECRET;
 
   return (
@@ -27,7 +58,21 @@ export default function LoginPage() {
             <form
               action={async () => {
                 'use server';
-                await signIn('google', { redirectTo: '/dashboard' });
+                try {
+                  await signIn('google', { redirectTo: '/dashboard' });
+                } catch (err) {
+                  // Redirect sukses dari signIn dilempar sebagai error ber-"digest"
+                  if (err && typeof err === 'object' && 'digest' in err) {
+                    throw err;
+                  }
+                  const code =
+                    err instanceof AuthError
+                      ? (err as AuthError & { code?: string }).code ||
+                        (err as AuthError & { type?: string }).type ||
+                        'Unknown'
+                      : 'Unknown';
+                  redirect(`/login?error=${encodeURIComponent(code)}`);
+                }
               }}
             >
               <Button
@@ -68,7 +113,7 @@ export default function LoginPage() {
         )}
 
         {/* Form email/password — client component dengan server action */}
-        <LoginForm />
+        <LoginForm externalError={externalError} />
       </div>
     </div>
   );

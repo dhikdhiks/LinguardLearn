@@ -19,7 +19,7 @@ function SubmitButton() {
   );
 }
 
-export default function LoginForm() {
+export default function LoginForm({ externalError }: { externalError?: string | null }) {
   const router = useRouter();
   const [state, formAction] = useActionState<AuthFormState, FormData>(
     loginUser,
@@ -36,12 +36,12 @@ export default function LoginForm() {
 
   return (
     <form action={formAction} className="mt-8 space-y-6">
-      {state.error && (
+      {(externalError || state.error) && (
         <div
           role="alert"
           className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg"
         >
-          {state.error}
+          {externalError || state.error}
         </div>
       )}
 
