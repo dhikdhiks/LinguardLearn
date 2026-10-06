@@ -11,10 +11,12 @@ interface Phrase {
 }
 
 export default function PhrasesSection({ phrases }: { phrases: Phrase[] }) {
-  const [randomPhrases, setRandomPhrases] = useState<Phrase[]>(() => {
-    const shuffled = [...phrases].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 10);
-  });
+  // JANGAN shuffle di initializer useState: Math.random() menghasilkan
+  // nilai berbeda saat SSR vs hydration → error "Hydration failed".
+  // Pakai 10 frasa pertama (deterministik); shuffle hanya di event handler.
+  const [randomPhrases, setRandomPhrases] = useState<Phrase[]>(() =>
+    phrases.slice(0, 10)
+  );
 
   const handleRefresh = () => {
     const shuffled = [...phrases].sort(() => Math.random() - 0.5);
