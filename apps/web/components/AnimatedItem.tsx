@@ -4,24 +4,19 @@ import { motion } from 'framer-motion';
 
 interface AnimatedItemProps {
   children: React.ReactNode;
-  key: string | number;
+  key?: string | number;
   className?: string;
 }
 
-export default function AnimatedItem({ children, key, className }: AnimatedItemProps) {
+// Animasi ringan (hanya fade+slide), TANPA `layout`/spring yang mahal.
+// `layout` + spring mengukur & menganimasi posisi elemen → sangat berat
+// untuk list ratusan item. Animasi ini cukup untuk list kecil.
+export default function AnimatedItem({ children, className }: AnimatedItemProps) {
   return (
     <motion.div
-      key={key}
-      layout
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -20, scale: 0.95 }}
-      transition={{
-        layout: { duration: 0.3, type: 'spring', stiffness: 300, damping: 25 },
-        opacity: { duration: 0.2 },
-        y: { duration: 0.3 },
-        scale: { duration: 0.2 },
-      }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }}
       className={className}
     >
       {children}

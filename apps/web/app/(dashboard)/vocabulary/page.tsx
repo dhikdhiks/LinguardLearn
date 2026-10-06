@@ -11,8 +11,8 @@ import {
   Trash2,
   PlusCircle,
 } from 'lucide-react';
-import AnimatedList from '@/components/AnimatedList';
-import AnimatedItem from '@/components/AnimatedItem';
+// Jumlah kartu per halaman (pagination)
+const PAGE_SIZE = 24;
 
 interface Word {
   id: string;
@@ -49,6 +49,9 @@ export default function VocabularyPage() {
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
   const [filterTag, setFilterTag] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'learned' | 'unlearned'>('all');
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [favoriting, setFavoriting] = useState<Set<string>>(new Set());
+  const [learning, setLearning] = useState<Set<string>>(new Set());
 
   const fetchWords = async () => {
     const res = await fetch('/api/vocabulary');
@@ -74,22 +77,62 @@ export default function VocabularyPage() {
     );
   };
 
+  // ============================================================
+  // TOGGLE OPTIMISTIK: update UI dulu, PATCH di background.
+  // TIDAK refetch seluruh API setiap klik → jauh lebih responsif.
+  // ============================================================
   const toggleFavorite = async (id: string, current: boolean) => {
-    await fetch(`/api/vocabulary/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isFavorite: !current }),
-    });
-    fetchWords();
+    const next = !current;
+    setFavoriting((prev) => new Set(prev).add(id));
+    // Optimistic update
+    setAllWords((prev) =>
+      prev.map((w) => (w.id === id ? { ...w, isFavorite: next } : w))
+    );
+    try {
+      await fetch(`/api/vocabulary/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isFavorite: next }),
+      });
+    } catch {
+      // Rollback jika gagal
+      setAllWords((prev) =>
+        prev.map((w) => (w.id === id ? { ...w, isFavorite: current } : w))
+      );
+    } finally {
+      setFavoriting((prev) => {
+        const s = new Set(prev);
+        s.delete(id);
+        return s;
+      });
+    }
   };
 
   const toggleLearned = async (id: string, current: boolean) => {
-    await fetch(`/api/vocabulary/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isLearned: !current }),
-    });
-    fetchWords();
+    const next = !current;
+    setLearning((prev) => new Set(prev).add(id));
+    // Optimistic update
+    setAllWords((prev) =>
+      prev.map((w) => (w.id === id ? { ...w, isLearned: next } : w))
+    );
+    try {
+      await fetch(`/api/vocabulary/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isLearned: next }),
+      });
+    } catch {
+      // Rollback jika gagal
+      setAllWords((prev) =>
+        prev.map((w) => (w.id === id ? { ...w, isLearned: current } : w))
+      );
+    } finally {
+      setLearning((prev) => {
+        const s = new Set(prev);
+        s.delete(id);
+        return s;
+      });
+    }
   };
 
   const handleDelete = async (id: string, word: string) => {
@@ -153,6 +196,12 @@ export default function VocabularyPage() {
     setFilteredWords(sorted);
   }, [searchTerm, selectedParts, selectedDifficulties, filterTag, filterStatus, allWords]);
 
+  // Reset pagination ke halaman awal setiap filter berubah
+  const filterKey = `${searchTerm}|${selectedParts.join(',')}|${selectedDifficulties.join(',')}|${filterTag}|${filterStatus}`;
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [filterKey]);
+
   if (loading) {
     return <div className="text-center py-12">⏳ Memuat data...</div>;
   }
@@ -166,7 +215,8 @@ export default function VocabularyPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">📚 Kamus Saya</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm">
-            {filteredWords.length} dari {allWords.length} kata
+            Menampilkan {Math.min(visibleCount, filteredWords.length)} dari {filteredWords.length} kata
+            {filteredWords.length !== allWords.length ? ` (dari ${allWords.length} total)` : ''}
           </p>
         </div>
         <button
@@ -311,9 +361,9 @@ export default function VocabularyPage() {
           <p className="text-gray-500 dark:text-gray-400 text-lg">Tidak ada kata yang cocok.</p>
         </div>
       ) : (
-        <AnimatedList className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filteredWords.map((word) => (
-            <AnimatedItem key={word.id} className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition group">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filteredWords.slice(0, visibleCount).map((word) => (
+            <div key={word.id} className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition group">
               {/* Header dengan tombol aksi */}
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -359,15 +409,23 @@ export default function VocabularyPage() {
                 <div className="flex items-center gap-1 shrink-0 ml-2">
                   <button
                     onClick={() => toggleFavorite(word.id, word.isFavorite)}
-                    className="p-1.5 text-gray-400 hover:text-yellow-500 transition"
+                    disabled={favoriting.has(word.id)}
+                    className={`p-1.5 text-gray-400 hover:text-yellow-500 transition ${
+                      favoriting.has(word.id) ? 'opacity-40 cursor-wait' : ''
+                    }`}
                     title={word.isFavorite ? 'Hapus favorit' : 'Tambah favorit'}
                   >
                     {word.isFavorite ? '⭐' : '☆'}
                   </button>
                   <button
                     onClick={() => toggleLearned(word.id, word.isLearned)}
+                    disabled={learning.has(word.id)}
                     className={`p-1.5 transition ${
-                      word.isLearned ? 'text-green-500' : 'text-gray-400 hover:text-green-500'
+                      learning.has(word.id)
+                        ? 'opacity-40 cursor-wait'
+                        : word.isLearned
+                        ? 'text-green-500'
+                        : 'text-gray-400 hover:text-green-500'
                     }`}
                     title={word.isLearned ? 'Tandai belum hafal' : 'Tandai sudah hafal'}
                   >
@@ -438,9 +496,21 @@ export default function VocabularyPage() {
                   📝 {word.notes}
                 </div>
               )}
-            </AnimatedItem>
+            </div>
           ))}
-        </AnimatedList>
+        </div>
+      )}
+
+      {/* TOMBOL MUAT LEBIH BANYAK (PAGINATION) */}
+      {filteredWords.length > visibleCount && (
+        <div className="mt-8 text-center">
+          <button
+            onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition shadow-sm"
+          >
+            Muat Lebih Banyak ({filteredWords.length - visibleCount} kata lagi)
+          </button>
+        </div>
       )}
     </div>
   );

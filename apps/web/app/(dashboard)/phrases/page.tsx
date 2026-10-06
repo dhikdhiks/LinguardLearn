@@ -30,6 +30,8 @@ export default function PhrasesPage() {
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
   const [filterTag, setFilterTag] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'learned' | 'unlearned'>('all');
+  const [favoriting, setFavoriting] = useState<Set<string>>(new Set());
+  const [learning, setLearning] = useState<Set<string>>(new Set());
 
   const fetchPhrases = async () => {
     const res = await fetch('/api/phrases');
@@ -50,21 +52,57 @@ export default function PhrasesPage() {
   };
 
   const toggleFavorite = async (id: string, current: boolean) => {
-    await fetch(`/api/phrases/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isFavorite: !current }),
-    });
-    fetchPhrases();
+    const next = !current;
+    setFavoriting((prev) => new Set(prev).add(id));
+    // Optimistic update, tanpa refetch semua frasa
+    setAllPhrases((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, isFavorite: next } : p))
+    );
+    try {
+      await fetch(`/api/phrases/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isFavorite: next }),
+      });
+    } catch {
+      // Rollback jika gagal
+      setAllPhrases((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, isFavorite: current } : p))
+      );
+    } finally {
+      setFavoriting((prev) => {
+        const s = new Set(prev);
+        s.delete(id);
+        return s;
+      });
+    }
   };
 
   const toggleLearned = async (id: string, current: boolean) => {
-    await fetch(`/api/phrases/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isLearned: !current }),
-    });
-    fetchPhrases();
+    const next = !current;
+    setLearning((prev) => new Set(prev).add(id));
+    // Optimistic update, tanpa refetch semua frasa
+    setAllPhrases((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, isLearned: next } : p))
+    );
+    try {
+      await fetch(`/api/phrases/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isLearned: next }),
+      });
+    } catch {
+      // Rollback jika gagal
+      setAllPhrases((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, isLearned: current } : p))
+      );
+    } finally {
+      setLearning((prev) => {
+        const s = new Set(prev);
+        s.delete(id);
+        return s;
+      });
+    }
   };
 
   const handleDelete = async (id: string, phrase: string) => {
