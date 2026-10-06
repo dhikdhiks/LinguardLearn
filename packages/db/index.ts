@@ -28,6 +28,7 @@ export {
   users,
   vocabulary,
   userVocabulary,
+  userPhrases,
   learningSessions,
   aiInteractions,
   difficultyEnum,

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { db, vocabulary } from 'db';
 import { auth } from '@/lib/auth';
-import { sql } from 'drizzle-orm';
+import { getRandomUnlearnedWords } from '@/lib/user-progress';
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -12,14 +11,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const limit = parseInt(searchParams.get('limit') || '10', 10);
 
-  const words = await db
-    .select()
-    .from(vocabulary)
-    .where(
-      sql`${vocabulary.difficulty} IN ('intermediate', 'advanced') AND ${vocabulary.isLearned} = false`
-    )
-    .orderBy(sql`RANDOM()`)
-    .limit(limit);
+  // Hanya kata yang BELUM dihafal user ini
+  const result = await getRandomUnlearnedWords(session.user.id, limit);
 
-  return NextResponse.json(words);
+  return NextResponse.json(result);
 }

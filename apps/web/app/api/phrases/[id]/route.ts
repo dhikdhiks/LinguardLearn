@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, phrases, eq } from 'db';
+import { db, phrases } from 'db';
+import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
+import { getPhraseWithFlags, setPhraseFlags } from '@/lib/user-progress';
 
 export async function GET(
   req: NextRequest,
@@ -12,17 +14,13 @@ export async function GET(
   }
 
   const { id } = await params;
-  const result = await db
-    .select()
-    .from(phrases)
-    .where(eq(phrases.id, id))
-    .limit(1);
+  const result = await getPhraseWithFlags(session.user.id, id);
 
-  if (result.length === 0) {
+  if (!result) {
     return NextResponse.json({ error: 'Phrase not found' }, { status: 404 });
   }
 
-  return NextResponse.json(result[0]);
+  return NextResponse.json(result);
 }
 
 export async function PUT(
@@ -45,6 +43,7 @@ export async function PUT(
     );
   }
 
+  // Data global phrases
   await db
     .update(phrases)
     .set({
@@ -54,11 +53,14 @@ export async function PUT(
       difficulty: difficulty || 'beginner',
       tags: tags || [],
       notes: notes || null,
-      isFavorite: isFavorite !== undefined ? isFavorite : false,
-      isLearned: isLearned !== undefined ? isLearned : false,
       updatedAt: new Date(),
     })
     .where(eq(phrases.id, id));
+
+  // Flag per-user (jika dikirim dari form edit)
+  if (isFavorite !== undefined || isLearned !== undefined) {
+    await setPhraseFlags(session.user.id, id, { isFavorite, isLearned });
+  }
 
   return NextResponse.json({ success: true });
 }
@@ -89,15 +91,21 @@ export async function PATCH(
   const { id } = await params;
   const body = await req.json();
 
-  await db
-    .update(phrases)
-    .set({
-      ...(body.isFavorite !== undefined && { isFavorite: body.isFavorite }),
-      ...(body.isLearned !== undefined && { isLearned: body.isLearned }),
-      ...(body.tags !== undefined && { tags: body.tags }),
-      updatedAt: new Date(),
-    })
-    .where(eq(phrases.id, id));
+  // Flag per-user → simpan ke user_phrases
+  if (body.isFavorite !== undefined || body.isLearned !== undefined) {
+    await setPhraseFlags(session.user.id, id, {
+      isFavorite: body.isFavorite,
+      isLearned: body.isLearned,
+    });
+  }
+
+  // Tags tetap data global frasa
+  if (body.tags !== undefined) {
+    await db
+      .update(phrases)
+      .set({ tags: body.tags, updatedAt: new Date() })
+      .where(eq(phrases.id, id));
+  }
 
   return NextResponse.json({ success: true });
 }

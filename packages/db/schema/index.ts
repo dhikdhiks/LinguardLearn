@@ -26,6 +26,9 @@ export const users = pgTable('users', {
   id: text('id').primaryKey(),
   email: text('email').notNull().unique(),
   name: text('name').notNull(),
+  // Nullable: user Google tidak punya password
+  passwordHash: text('password_hash'),
+  emailVerifiedAt: timestamp('email_verified_at'),
   avatarUrl: text('avatar_url'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -46,8 +49,7 @@ export const vocabulary = pgTable(
     difficulty: difficultyEnum('difficulty').default('beginner'),
     phonetic: text('phonetic'),
     audioUrl: text('audio_url'),
-    isFavorite: boolean('is_favorite').default(false),
-    isLearned: boolean('is_learned').default(false),
+    // NOTE: isFavorite/isLearned kini PER-USER (lihat userVocabulary)
     tags: text('tags').array().default([]),
 
     // === VERB FORMS (jika kata kerja) ===
@@ -90,6 +92,9 @@ export const userVocabulary = pgTable(
       .notNull()
       .references(() => vocabulary.id, { onDelete: 'cascade' }),
     status: text('status').default('learning'),
+    // === FLAG PER-USER (sebelumnya global di tabel vocabulary) ===
+    isFavorite: boolean('is_favorite').default(false),
+    isLearned: boolean('is_learned').default(false),
     correctCount: integer('correct_count').default(0),
     wrongCount: integer('wrong_count').default(0),
     lastReviewedAt: timestamp('last_reviewed_at'),
@@ -159,8 +164,7 @@ export const phrases = pgTable(
     translation: text('translation').notNull(),
     phonetic: text('phonetic'),
     difficulty: difficultyEnum('difficulty').default('beginner'),
-    isFavorite: boolean('is_favorite').default(false),
-    isLearned: boolean('is_learned').default(false),
+    // NOTE: isFavorite/isLearned kini PER-USER (lihat userPhrases)
     tags: text('tags').array().default([]),
     notes: text('notes'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -168,5 +172,37 @@ export const phrases = pgTable(
   },
   (table) => ({
     phraseIdx: uniqueIndex('phrase_idx').on(table.phrase),
+  })
+);
+
+// ============================================
+// TABEL USER_PHRASES (progres & flag per-user)
+// ============================================
+export const userPhrases = pgTable(
+  'user_phrases',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    phraseId: text('phrase_id')
+      .notNull()
+      .references(() => phrases.id, { onDelete: 'cascade' }),
+    status: text('status').default('learning'),
+    // === FLAG PER-USER (sebelumnya global di tabel phrases) ===
+    isFavorite: boolean('is_favorite').default(false),
+    isLearned: boolean('is_learned').default(false),
+    correctCount: integer('correct_count').default(0),
+    wrongCount: integer('wrong_count').default(0),
+    lastReviewedAt: timestamp('last_reviewed_at'),
+    nextReviewAt: timestamp('next_review_at'),
+    easeFactor: integer('ease_factor').default(2.5),
+    interval: integer('interval').default(0),
+    repetition: integer('repetition').default(0),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userPhraseIdx: uniqueIndex('user_phrase_idx').on(table.userId, table.phraseId),
   })
 );

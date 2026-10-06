@@ -1,16 +1,17 @@
-import { db, vocabulary, phrases } from 'db';
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import FocusWords from '@/components/FocusWords';
 import PhrasesSection from '@/components/PhrasesSection';
+import { getVocabularyWithFlags, getPhrasesWithFlags } from '@/lib/user-progress';
 
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
 
-  const allWords = await db.select().from(vocabulary);
-  const allPhrases = await db.select().from(phrases);
+  // Data per-user: isFavorite/isLearned dihitung dari user ini
+  const allWords = await getVocabularyWithFlags(session.user.id);
+  const allPhrases = await getPhrasesWithFlags(session.user.id);
 
   // Vocabulary stats
   const totalWords = allWords.length;

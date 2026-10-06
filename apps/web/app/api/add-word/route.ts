@@ -62,8 +62,6 @@ export async function POST(req: NextRequest) {
     notes: notes || null,
     createdAt: new Date(),
     updatedAt: new Date(),
-    isFavorite: false,
-    isLearned: false,
   });
 
   return NextResponse.json({ success: true, word });

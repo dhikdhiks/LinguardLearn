@@ -29,6 +29,20 @@
       "when": 1783504737377,
       "tag": "0003_brainy_edwin_jarvis",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791297330182,
+      "tag": "0004_low_loa",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791302197413,
+      "tag": "0005_thin_hercules",
+      "breakpoints": true
     }
   ]
 }

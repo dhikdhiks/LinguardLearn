@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, vocabulary } from 'db';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
+import { getVocabularyWordWithFlags, setVocabularyFlags } from '@/lib/user-progress';
 
 // ============================================================
 // GET /api/vocabulary/[id] - Ambil detail kata
@@ -17,17 +18,13 @@ export async function GET(
 
   const { id } = await params; // <-- AWAIT params
 
-  const word = await db
-    .select()
-    .from(vocabulary)
-    .where(eq(vocabulary.id, id))
-    .limit(1);
+  const word = await getVocabularyWordWithFlags(session.user.id, id);
 
-  if (word.length === 0) {
+  if (!word) {
     return NextResponse.json({ error: 'Kata tidak ditemukan' }, { status: 404 });
   }
 
-  return NextResponse.json(word[0]);
+  return NextResponse.json(word);
 }
 
 // ============================================================
@@ -113,7 +110,7 @@ export async function PUT(
 }
 
 // ============================================================
-// PATCH /api/vocabulary/[id] - Toggle favorite / learned / tags
+// PATCH /api/vocabulary/[id] - Toggle favorite/learned (per-user) / tags (global)
 // ============================================================
 export async function PATCH(
   req: NextRequest,
@@ -127,16 +124,21 @@ export async function PATCH(
   const { id } = await params;
   const body = await req.json();
 
-  // Update hanya field yang dikirim
-  await db
-    .update(vocabulary)
-    .set({
-      ...(body.isFavorite !== undefined && { isFavorite: body.isFavorite }),
-      ...(body.isLearned !== undefined && { isLearned: body.isLearned }),
-      ...(body.tags !== undefined && { tags: body.tags }),
-      updatedAt: new Date(),
-    })
-    .where(eq(vocabulary.id, id));
+  // Flag per-user → simpan ke user_vocabulary
+  if (body.isFavorite !== undefined || body.isLearned !== undefined) {
+    await setVocabularyFlags(session.user.id, id, {
+      isFavorite: body.isFavorite,
+      isLearned: body.isLearned,
+    });
+  }
+
+  // Tags tetap data global kata
+  if (body.tags !== undefined) {
+    await db
+      .update(vocabulary)
+      .set({ tags: body.tags, updatedAt: new Date() })
+      .where(eq(vocabulary.id, id));
+  }
 
   return NextResponse.json({ success: true });
 }

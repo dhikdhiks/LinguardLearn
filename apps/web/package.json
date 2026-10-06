@@ -10,6 +10,7 @@
   "dependencies": {
     "@auth/core": "^0.34.3",
     "@base-ui/react": "^1.6.0",
+    "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "db": "workspace:*",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@shadcn/ui": "^0.0.4",
     "@tailwindcss/postcss": "^4.3.2",
+    "@types/bcryptjs": "^3.0.0",
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
