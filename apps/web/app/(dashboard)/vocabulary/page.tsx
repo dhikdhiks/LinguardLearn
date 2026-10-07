@@ -11,8 +11,8 @@ import {
   Trash2,
   PlusCircle,
 } from 'lucide-react';
-// Jumlah kartu per halaman (pagination)
-const PAGE_SIZE = 24;
+// Jumlah kartu per halaman (pagination) - optimasi untuk UX
+const PAGE_SIZE = 20;
 
 interface Word {
   id: string;

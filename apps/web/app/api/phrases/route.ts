@@ -1,5 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db, phrases, eq } from 'db';
+import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getPhrasesWithFlags } from '@/lib/user-progress';
 
