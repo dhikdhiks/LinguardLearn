@@ -6,6 +6,5 @@
     "app/api/**/*.ts": {
       "maxDuration": 30
     }
-  },
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . || echo 'changed'"
+  }
 }
