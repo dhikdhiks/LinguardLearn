@@ -1,0 +1,106 @@
+{
+  "vocabulary": [
+    {
+      "id": "3a1bc54f-dedd-48a7-b833-569de592b5c3",
+      "word": "apple",
+      "is_learned": true
+    },
+    {
+      "id": "93790967-2192-45bf-8602-a615f2a91635",
+      "word": "ability",
+      "is_learned": true
+    },
+    {
+      "id": "7250adc8-470d-44bb-a0eb-a9bea89efda0",
+      "word": "absence",
+      "is_learned": true
+    },
+    {
+      "id": "00510ed5-d7da-49d4-a397-b780c0a0fcc0",
+      "word": "absolutely",
+      "is_learned": true
+    },
+    {
+      "id": "7b5900a4-d389-4ffc-a3ab-5dcad253a0cd",
+      "word": "absent",
+      "is_learned": true
+    },
+    {
+      "id": "b7e0272d-0e60-47a7-90b8-f0e58ce33c1e",
+      "word": "access",
+      "is_learned": true
+    },
+    {
+      "id": "3af20d73-7f8c-4ba5-b720-471e0755645f",
+      "word": "accident",
+      "is_learned": true
+    }
+  ],
+  "phrases": [
+    {
+      "id": "259515cc-8ee5-4882-8ee6-e8d3414a6aec",
+      "phrase": "congratulations",
+      "is_learned": true
+    },
+    {
+      "id": "8ff1fc57-ce03-4a35-bd83-69e8dc01d895",
+      "phrase": "good evening",
+      "is_learned": true
+    },
+    {
+      "id": "47b8421e-e55b-4b81-9a65-41e10f78f72b",
+      "phrase": "good afternoon",
+      "is_learned": true
+    },
+    {
+      "id": "827da5ee-8f73-45fa-8112-b91046f9252a",
+      "phrase": "can you help me?",
+      "is_learned": true
+    },
+    {
+      "id": "e674d95d-ef30-42a4-83bf-4b5897241c41",
+      "phrase": "good luck",
+      "is_learned": true
+    },
+    {
+      "id": "f7132a92-139a-4238-b26f-ecfd165f92e0",
+      "phrase": "good night",
+      "is_learned": true
+    },
+    {
+      "id": "4f443cf1-03a9-436c-ac7d-67c5ebb84361",
+      "phrase": "good morning",
+      "is_learned": true
+    },
+    {
+      "id": "b7d1426e-645c-4c72-bb0e-8ba92c630dbc",
+      "phrase": "happy birthday",
+      "is_learned": true
+    },
+    {
+      "id": "87035815-f22d-4425-ae62-9b274de0b33b",
+      "phrase": "happy new year",
+      "is_learned": true
+    },
+    {
+      "id": "4bb72b7c-9023-4474-baa9-bf830aaf31a1",
+      "phrase": "excuse me",
+      "is_learned": true
+    },
+    {
+      "id": "f29f0a63-2a3e-4b33-888f-3d51b8839379",
+      "phrase": "i am still learning english",
+      "is_learned": true
+    },
+    {
+      "id": "b5a64629-f83f-48f1-8a25-e6f1f2a48b8f",
+      "phrase": "can you help me, please?",
+      "is_learned": true
+    },
+    {
+      "id": "bedd33b8-d91d-4d0e-bb2a-cc23dbb09098",
+      "phrase": "can i swim here?",
+      "is_learned": true
+    }
+  ]
+}
