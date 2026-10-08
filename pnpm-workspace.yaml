@@ -1,6 +1,7 @@
-packages:
-  - "apps/*"
-  - "packages/*"
+# Config pnpm 11 (bukan monorepo lagi — tidak ada `packages:`).
+# Hanya untuk mengizinkan postinstall dependency yang dibutuhkan:
+#   - esbuild  → tsx, drizzle-kit
+#   - sharp    → optimasi gambar next/image
 allowBuilds:
   esbuild: true
   sharp: true

@@ -1,12 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm install --frozen-lockfile && pnpm build",
-  "installCommand": "pnpm install --frozen-lockfile",
-  "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
   "regions": ["sin1"],
   "functions": {
-    "apps/web/app/api/**/*.ts": {
+    "app/api/**/*.ts": {
       "maxDuration": 30
     }
   },

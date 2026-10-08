@@ -33,9 +33,6 @@ logs/
 npm-debug.log*
 pnpm-debug.log*
 
-# Turbo
-.turbo/
-
 # Coverage
 coverage/
 

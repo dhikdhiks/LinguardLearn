@@ -26,7 +26,7 @@ pnpm db:migrate   # jalankan migrasi ke DB remote
 
 ## 3. Setup Vercel
 1. Import repo ke [vercel.com](https://vercel.com)
-2. Root Directory: `./` (monorepo). Vercel akan auto-detect Next.js di `apps/web`
+2. Root Directory: `./` (project tunggal Next.js — tidak ada monorepo lagi)
 3. Set Environment Variables di Project Settings > Environment Variables:
 
 | Variable | Value | Notes |
@@ -38,7 +38,7 @@ pnpm db:migrate   # jalankan migrasi ke DB remote
 | `AUTH_GOOGLE_SECRET` | Client Secret Google OAuth | Opsional |
 | `AUTH_TRUST_HOST` | `true` | Wajib untuk Vercel |
 
-4. Build & Deploy: Vercel otomatis build dengan `pnpm build` (sesuai vercel.json)
+4. Build & Deploy: Vercel otomatis build dengan `next build` (framework Next.js auto-detect)
 
 ## 4. Health Check
 Setelah deploy, cek: `https://your-domain.vercel.app/api/health`
@@ -52,6 +52,6 @@ Harus return `{ "ok": true, ... }`. Jika ada `missingTables`, jalankan migrate k
 - DB pakai singleton connection (mengurangi reconnect di serverless). 
 
 ## Struktur Deploy
-- Frontend/API: Next.js App Router (`apps/web`) di Vercel
-- Database: Supabase (Postgres) via Drizzle ORM
-- Monorepo: Turborepo + pnpm workspaces
+- Frontend/API: Next.js App Router (root project) di Vercel
+- Database: Supabase (Postgres) via Drizzle ORM (kode di `lib/db`)
+- Struktur: Single project Next.js (tanpa Turborepo/pnpm workspaces)
