@@ -213,7 +213,7 @@ export default function VocabularyPage() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">📚 Kamus Saya</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">📚 Kamus Sayaaa</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm">
             Menampilkan {Math.min(visibleCount, filteredWords.length)} dari {filteredWords.length} kata
             {filteredWords.length !== allWords.length ? ` (dari ${allWords.length} total)` : ''}
