@@ -1,12 +1,14 @@
 // ============================================
 // SHARED DICTIONARY HELPER
-// Dipakai oleh /api/dictionary dan batch import.
-// Kedua API eksternal dijalankan PARALEL.
+// Sumber berlapis:
+//   1. dictionaryapi.dev (paling lengkap: fonetik + bentuk kata)
+//   2. Wiktionary REST (cadangan: definisi + jenis kata)
+//   3. MyMemory (terjemahan, jalan paralel)
+// Kegagalan satu sumber tidak mematikan seluruh hasil.
 // ============================================
 
-export interface DictionaryEntry {
+export interface DictBase {
   word: string;
-  translation: string;
   partOfSpeech: string;
   definition: string;
   exampleSentence: string;
@@ -21,11 +23,59 @@ export interface DictionaryEntry {
   plural_form: string;
 }
 
-async function fetchFreeDictionary(word: string) {
+export interface DictionaryEntry extends DictBase {
+  translation: string;
+  /** true jika data tidak lengkap (mis. definisi/bentuk kata tidak tersedia) */
+  partial?: boolean;
+  /** true jika terjemahan tidak ditemukan */
+  translationMissing?: boolean;
+}
+
+// ---------- UTIL ----------
+function stripHtml(input: string): string {
+  return String(input ?? '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+([.,;:!?])/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function mapPartOfSpeech(raw: string): string {
+  const s = String(raw ?? '').toLowerCase();
+  if (s.includes('noun')) return 'noun';
+  if (s.includes('adjective')) return 'adjective';
+  if (s.includes('adverb')) return 'adverb'; // dicek sebelum "verb" ("adverb" mengandung "verb")
+  if (s.includes('verb')) return 'verb';
+  if (s.includes('pronoun')) return 'pronoun';
+  if (s.includes('preposition')) return 'preposition';
+  if (s.includes('conjunction')) return 'conjunction';
+  if (s.includes('interjection')) return 'interjection';
+  return '';
+}
+
+// Retry sederhana: coba beberapa kali sampai dapat hasil
+async function withRetry<T>(fn: () => Promise<T | null>, attempts = 2): Promise<T | null> {
+  for (let i = 0; i < attempts; i++) {
+    const result = await fn();
+    if (result) return result;
+  }
+  return null;
+}
+
+// ---------- SUMBER 1: dictionaryapi.dev ----------
+async function fetchFreeDictionary(word: string): Promise<DictBase | null> {
   try {
     const res = await fetch(
       `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
-      { signal: AbortSignal.timeout(8000) }
+      { signal: AbortSignal.timeout(5000) }
     );
     if (!res.ok) return null;
     const data = await res.json();
@@ -99,7 +149,48 @@ async function fetchFreeDictionary(word: string) {
   }
 }
 
-async function fetchTranslation(word: string) {
+// ---------- SUMBER 2: Wiktionary ----------
+async function fetchWiktionary(word: string): Promise<DictBase | null> {
+  try {
+    const res = await fetch(
+      `https://en.wiktionary.org/api/rest_v1/page/definition/${encodeURIComponent(word)}`,
+      { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(8000) }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const en = data?.en;
+    if (!Array.isArray(en) || en.length === 0) return null;
+
+    const first = en.find((e: any) => e.language === 'English') ?? en[0];
+    const def = first.definitions?.[0];
+    if (!def) return null;
+
+    const example =
+      def.examples?.[0] || def.parsedExamples?.[0]?.example || '';
+
+    return {
+      word,
+      partOfSpeech: mapPartOfSpeech(first.partOfSpeech),
+      definition: stripHtml(def.definition || ''),
+      exampleSentence: stripHtml(example),
+      phonetic: '',
+      synonyms: [],
+      antonyms: [],
+      v1: word,
+      v2: '',
+      v3: '',
+      v_ing: '',
+      v_s: '',
+      plural_form: '',
+    };
+  } catch (error) {
+    console.error('Wiktionary API error:', error);
+    return null;
+  }
+}
+
+// ---------- SUMBER 3: MyMemory (terjemahan) ----------
+async function fetchTranslation(word: string): Promise<string | null> {
   try {
     const res = await fetch(
       `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|id`,
@@ -107,8 +198,11 @@ async function fetchTranslation(word: string) {
     );
     if (!res.ok) return null;
     const data = await res.json();
-    if (data.responseData && data.responseData.translatedText) {
-      return data.responseData.translatedText as string;
+    const translated = data?.responseData?.translatedText;
+    if (typeof translated === 'string' && translated.trim()) {
+      // MyMemory kadang mengembalikan pesan error sebagai teks
+      if (/MYMEMORY WARNING|QUERY LENGTH LIMIT/i.test(translated)) return null;
+      return translated.trim();
     }
     return null;
   } catch {
@@ -116,17 +210,48 @@ async function fetchTranslation(word: string) {
   }
 }
 
-// Ambil dictionary + terjemahan sekaligus (paralel)
+// ============================================
+// GABUNGAN: dictionary + wiktionary + terjemahan (semua paralel)
+// ============================================
 export async function fetchDictionaryEntry(word: string): Promise<DictionaryEntry | null> {
-  const [dictData, translation] = await Promise.all([
+  const [dict, wik, translation] = await Promise.all([
+    // Tanpa retry: kalau sumber utama sedang down, jangan tahan hasil 2x.
+    // Fallback Wiktionary/MyMemory yang menangani.
     fetchFreeDictionary(word),
-    fetchTranslation(word),
+    withRetry(() => fetchWiktionary(word), 2),
+    withRetry(() => fetchTranslation(word), 2),
   ]);
 
-  if (!dictData) return null;
+  const base = dict ?? wik; // dictionaryapi.dev lebih lengkap, pakai dulu
+
+  // Tidak ada sumber kamus sama sekali
+  if (!base) {
+    if (translation) {
+      return {
+        word,
+        translation,
+        partOfSpeech: '',
+        definition: '',
+        exampleSentence: '',
+        phonetic: '',
+        synonyms: [],
+        antonyms: [],
+        v1: word,
+        v2: '',
+        v3: '',
+        v_ing: '',
+        v_s: '',
+        plural_form: '',
+        partial: true,
+      };
+    }
+    return null;
+  }
 
   return {
-    ...dictData,
-    translation: translation || '(Terjemahan tidak ditemukan, isi manual)',
+    ...base,
+    translation: translation || '',
+    partial: !dict, // hanya Wiktionary → fonetik/bentuk kata kemungkinan kosong
+    translationMissing: !translation,
   };
 }

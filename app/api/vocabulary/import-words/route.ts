@@ -64,6 +64,10 @@ export async function POST(req: NextRequest) {
           failed.push(`${w} (tidak ditemukan)`);
           continue;
         }
+        if (!e.translation) {
+          failed.push(`${w} (terjemahan tidak ditemukan)`);
+          continue;
+        }
         entries.push({
           word: e.word || w,
           translation: e.translation,

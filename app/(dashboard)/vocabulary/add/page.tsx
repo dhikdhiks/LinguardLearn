@@ -66,7 +66,9 @@ export default function AddVocabularyPage() {
         antonyms: data.antonyms?.join(', ') || '',
       }));
       if (!data.translation) {
-        setError('⚠️ Terjemahan tidak ditemukan, isi manual.');
+        setError('Terjemahan otomatis tidak ditemukan, silakan isi manual.');
+      } else if (data.partial) {
+        setError('Data definisi/bentuk kata tidak tersedia (sumber kamus sedang gangguan), silakan lengkapi manual bila perlu.');
       }
     } catch {
       setError('Terjadi kesalahan');
