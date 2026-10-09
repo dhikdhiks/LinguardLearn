@@ -43,6 +43,20 @@
       "when": 1791302197413,
       "tag": "0005_thin_hercules",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791517163135,
+      "tag": "0006_dizzy_ronan",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791517163136,
+      "tag": "0006_perf_indexes",
+      "breakpoints": true
     }
   ]
 }

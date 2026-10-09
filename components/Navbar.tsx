@@ -57,7 +57,7 @@ export default function Navbar({ user }: NavbarProps) {
             <NavLink href="/phrases" icon={<MessageSquare className="w-4 h-4" />}>
               Kalimat
             </NavLink>
-            <NavLink href="/quiz" icon={<Brain className="w-4 h-4" />}>
+            <NavLink href="/quiz-custom" icon={<Brain className="w-4 h-4" />}>
               Kuis
             </NavLink>
 
@@ -155,7 +155,7 @@ export default function Navbar({ user }: NavbarProps) {
             <MobileNavLink href="/phrases" icon={<MessageSquare className="w-5 h-5" />}>
               Kalimat
             </MobileNavLink>
-            <MobileNavLink href="/quiz" icon={<Brain className="w-5 h-5" />}>
+            <MobileNavLink href="/quiz-custom" icon={<Brain className="w-5 h-5" />}>
               Kuis
             </MobileNavLink>
             <div className="pl-4 space-y-1">

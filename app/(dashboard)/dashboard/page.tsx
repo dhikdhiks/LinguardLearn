@@ -3,35 +3,47 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import FocusWords from '@/components/FocusWords';
 import PhrasesSection from '@/components/PhrasesSection';
-import { getVocabularyWithFlags, getPhrasesWithFlags } from '@/lib/user-progress';
+import { db, phrases, userPhrases } from '@/lib/db';
+import { eq, and, sql } from 'drizzle-orm';
+import { getRandomVocabularyWithFlags, getVocabularyStats, getPhrasesStats } from '@/lib/user-progress';
 
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
 
-  // Data per-user: isFavorite/isLearned dihitung dari user ini
-  const allWords = await getVocabularyWithFlags(session.user.id);
-  const allPhrases = await getPhrasesWithFlags(session.user.id);
+  // Gunakan SQL-side count (ringan) untuk stats, bukan load semua data
+  const [vocabStats, phraseStats] = await Promise.all([
+    getVocabularyStats(session.user.id),
+    getPhrasesStats(session.user.id),
+  ]);
 
-  // Vocabulary stats
-  const totalWords = allWords.length;
-  const learnedWords = allWords.filter((w) => w.isLearned).length;
-  const unlearnedWords = allWords.filter((w) => !w.isLearned);
-  const favoriteWords = allWords.filter((w) => w.isFavorite).length;
-  const wordPercentage = totalWords > 0 ? Math.round((learnedWords / totalWords) * 100) : 0;
+  // Ambil 1 kata acak (query ringan, tanpa menarik seluruh tabel)
+  const randomWord = await getRandomVocabularyWithFlags(session.user.id);
 
-  // Phrases stats
-  const totalPhrases = allPhrases.length;
-  const learnedPhrases = allPhrases.filter((p) => p.isLearned).length;
-  const unlearnedPhrases = allPhrases.filter((p) => !p.isLearned);
-  const favoritePhrases = allPhrases.filter((p) => p.isFavorite).length;
-  const phrasePercentage = totalPhrases > 0 ? Math.round((learnedPhrases / totalPhrases) * 100) : 0;
+  // Ambil unlearned phrases untuk PhrasesSection (limit 20 biar ringan)
+  const unlearnedPhrasesResult = await db
+    .select({
+      phrase: phrases,
+      isFavorite: userPhrases.isFavorite,
+      isLearned: userPhrases.isLearned,
+    })
+    .from(phrases)
+    .leftJoin(
+      userPhrases,
+      and(
+        eq(userPhrases.phraseId, phrases.id),
+        eq(userPhrases.userId, session.user.id)
+      )
+    )
+    .where(sql`COALESCE(${userPhrases.isLearned}, false) = false`)
+    .orderBy(phrases.id)
+    .limit(20);
 
-  // Random word of the day
-  const randomWord = allWords.length > 0 ? allWords[Math.floor(Math.random() * allWords.length)] : null;
-
-  // Filter phrases untuk hanya yang belum dihafal
-  const unlearnedPhrasesList = allPhrases.filter(p => !p.isLearned);
+  const unlearnedPhrasesList = unlearnedPhrasesResult.map((r) => ({
+    ...r.phrase,
+    isFavorite: r.isFavorite ?? false,
+    isLearned: r.isLearned ?? false,
+  }));
 
   return (
     <div>
@@ -46,20 +58,20 @@ export default async function DashboardPage() {
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-white">📚 Progress Vocabulary</h2>
           <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-            {wordPercentage}% ({learnedWords} dari {totalWords} kata)
+            {vocabStats.percentage}% ({vocabStats.learned} dari {vocabStats.total} kata)
           </span>
         </div>
         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
           <div
             className="bg-gradient-to-r from-blue-500 to-indigo-600 h-3 rounded-full transition-all"
-            style={{ width: `${wordPercentage}%` }}
+            style={{ width: `${vocabStats.percentage}%` }}
           />
         </div>
         <div className="grid grid-cols-4 gap-2 mt-3 text-xs text-gray-500 dark:text-gray-400">
-          <div>Total: {totalWords}</div>
-          <div className="text-green-600">Dihafal: {learnedWords}</div>
-          <div className="text-orange-500">Belum: {unlearnedWords.length}</div>
-          <div className="text-yellow-500">⭐ {favoriteWords}</div>
+          <div>Total: {vocabStats.total}</div>
+          <div className="text-green-600">Dihafal: {vocabStats.learned}</div>
+          <div className="text-orange-500">Belum: {vocabStats.unlearned}</div>
+          <div className="text-yellow-500">⭐ {vocabStats.favorite}</div>
         </div>
       </div>
 
@@ -68,20 +80,20 @@ export default async function DashboardPage() {
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-white">💬 Progress Phrases</h2>
           <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-            {phrasePercentage}% ({learnedPhrases} dari {totalPhrases} kalimat)
+            {phraseStats.percentage}% ({phraseStats.learned} dari {phraseStats.total} kalimat)
           </span>
         </div>
         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
           <div
             className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all"
-            style={{ width: `${phrasePercentage}%` }}
+            style={{ width: `${phraseStats.percentage}%` }}
           />
         </div>
         <div className="grid grid-cols-4 gap-2 mt-3 text-xs text-gray-500 dark:text-gray-400">
-          <div>Total: {totalPhrases}</div>
-          <div className="text-green-600">Dihafal: {learnedPhrases}</div>
-          <div className="text-orange-500">Belum: {unlearnedPhrases.length}</div>
-          <div className="text-yellow-500">⭐ {favoritePhrases}</div>
+          <div>Total: {phraseStats.total}</div>
+          <div className="text-green-600">Dihafal: {phraseStats.learned}</div>
+          <div className="text-orange-500">Belum: {phraseStats.unlearned}</div>
+          <div className="text-yellow-500">⭐ {phraseStats.favorite}</div>
         </div>
       </div>
 
@@ -147,7 +159,7 @@ export default async function DashboardPage() {
           💬 Lihat Kalimat
         </Link>
         <Link
-          href="/quiz"
+          href="/quiz-custom"
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
         >
           🧠 Kuis

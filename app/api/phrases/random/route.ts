@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { db, phrases } from '@/lib/db';
 import { auth } from '@/lib/auth';
-import { sql } from 'drizzle-orm';
+import { getRandomUnlearnedPhrases } from '@/lib/user-progress';
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -11,18 +10,9 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const limit = parseInt(searchParams.get('limit') || '10', 10);
-  const difficulty = searchParams.get('difficulty') || null;
 
-let query = db.select().from(phrases);
+  // Gunakan optimized random (ID-range, bukan ORDER BY RANDOM())
+  const result = await getRandomUnlearnedPhrases(session.user.id, limit);
 
-const result = difficulty
-  ? await query
-      .where(sql`${phrases.difficulty} = ${difficulty}`)
-      .orderBy(sql`RANDOM()`)
-      .limit(limit)
-  : await query
-      .orderBy(sql`RANDOM()`)
-      .limit(limit);
-
-return NextResponse.json(result);
+  return NextResponse.json(result);
 }

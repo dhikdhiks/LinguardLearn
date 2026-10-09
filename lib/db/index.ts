@@ -73,6 +73,9 @@ export {
   difficultyEnum,
   partOfSpeechEnum,
   phrases,
+  quizCustomSets,
+  quizCustomSetItems,
+  quizCustomAttempts,
 } from './schema';
 
 // Re-export helper functions from drizzle-orm

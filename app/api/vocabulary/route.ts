@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { getVocabularyWithFlags } from '@/lib/user-progress';
+import { getVocabularyListWithFlags } from '@/lib/user-progress';
 
 export async function GET() {
   const session = await auth();
@@ -8,7 +8,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // isFavorite/isLearned ikut SESSION user (per-user)
-  const words = await getVocabularyWithFlags(session.user.id);
+  // Gunakan projection (kolom minimal) untuk list - lebih ringan
+  const words = await getVocabularyListWithFlags(session.user.id);
   return NextResponse.json(words);
 }

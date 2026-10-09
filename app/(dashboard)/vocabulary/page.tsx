@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 // Jumlah kartu per halaman (pagination) - optimasi untuk UX
 const PAGE_SIZE = 20;
+const DEBOUNCE_MS = 250;
 
 interface Word {
   id: string;
@@ -40,42 +41,85 @@ interface Word {
 export default function VocabularyPage() {
   const router = useRouter();
 
-  const [allWords, setAllWords] = useState<Word[]>([]);
-  const [filteredWords, setFilteredWords] = useState<Word[]>([]);
+  // Server-side pagination state
+  const [words, setWords] = useState<Word[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
+  // Filter state
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedParts, setSelectedParts] = useState<string[]>([]);
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
   const [filterTag, setFilterTag] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'learned' | 'unlearned'>('all');
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [favoriting, setFavoriting] = useState<Set<string>>(new Set());
   const [learning, setLearning] = useState<Set<string>>(new Set());
 
-  const fetchWords = async () => {
-    const res = await fetch('/api/vocabulary');
-    const data = await res.json();
-    setAllWords(data);
-    setFilteredWords(data);
-    setLoading(false);
-  };
-
+  // Debounce search term
   useEffect(() => {
-    fetchWords();
-  }, []);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-  const togglePart = (part: string) => {
-    setSelectedParts((prev) =>
-      prev.includes(part) ? prev.filter((p) => p !== part) : [...prev, part]
-    );
-  };
+  // Build query params from filters
+  const buildQueryParams = useCallback(() => {
+    const params = new URLSearchParams();
+    if (debouncedSearchTerm) params.set('search', debouncedSearchTerm);
+    if (selectedParts.length > 0) params.set('partOfSpeech', selectedParts.join(','));
+    if (selectedDifficulties.length > 0) params.set('difficulty', selectedDifficulties.join(','));
+    if (filterTag) params.set('tag', filterTag);
+    if (filterStatus !== 'all') params.set('status', filterStatus);
+    params.set('limit', PAGE_SIZE.toString());
+    params.set('sortBy', 'word');
+    params.set('sortOrder', 'asc');
+    return params.toString();
+  }, [debouncedSearchTerm, selectedParts, selectedDifficulties, filterTag, filterStatus]);
 
-  const toggleDifficulty = (diff: string) => {
-    setSelectedDifficulties((prev) =>
-      prev.includes(diff) ? prev.filter((d) => d !== diff) : [...prev, diff]
-    );
-  };
+  // Fetch words from API with current filters
+  const fetchWords = useCallback(async (offset = 0, append = false) => {
+    if (!append) setLoading(true);
+    else setLoadingMore(true);
+
+    try {
+      const params = buildQueryParams();
+      const url = `/api/vocabulary/search?${params}&offset=${offset}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (append) {
+        setWords((prev) => [...prev, ...data.data]);
+      } else {
+        setWords(data.data);
+      }
+      setTotalCount(data.total);
+    } catch (error) {
+      console.error('Failed to fetch vocabulary:', error);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, [buildQueryParams]);
+
+  // Fetch when filters change
+  useEffect(() => {
+    fetchWords(0, false);
+  }, [fetchWords]);
+
+  // Load more (pagination)
+  const loadMore = useCallback(() => {
+    fetchWords(words.length, true);
+  }, [fetchWords, words.length]);
+
+  // Get unique tags from loaded words (for filter dropdown)
+  const allTags = [...new Set(words.flatMap((w) => w.tags || []))];
+
+  if (loading) {
+    return <div className="text-center py-12">⏳ Memuat data...</div>;
+  }
 
   // ============================================================
   // TOGGLE OPTIMISTIK: update UI dulu, PATCH di background.
@@ -85,7 +129,7 @@ export default function VocabularyPage() {
     const next = !current;
     setFavoriting((prev) => new Set(prev).add(id));
     // Optimistic update
-    setAllWords((prev) =>
+    setWords((prev) =>
       prev.map((w) => (w.id === id ? { ...w, isFavorite: next } : w))
     );
     try {
@@ -96,7 +140,7 @@ export default function VocabularyPage() {
       });
     } catch {
       // Rollback jika gagal
-      setAllWords((prev) =>
+      setWords((prev) =>
         prev.map((w) => (w.id === id ? { ...w, isFavorite: current } : w))
       );
     } finally {
@@ -112,7 +156,7 @@ export default function VocabularyPage() {
     const next = !current;
     setLearning((prev) => new Set(prev).add(id));
     // Optimistic update
-    setAllWords((prev) =>
+    setWords((prev) =>
       prev.map((w) => (w.id === id ? { ...w, isLearned: next } : w))
     );
     try {
@@ -123,7 +167,7 @@ export default function VocabularyPage() {
       });
     } catch {
       // Rollback jika gagal
-      setAllWords((prev) =>
+      setWords((prev) =>
         prev.map((w) => (w.id === id ? { ...w, isLearned: current } : w))
       );
     } finally {
@@ -138,7 +182,7 @@ export default function VocabularyPage() {
   const handleDelete = async (id: string, word: string) => {
     if (!confirm(`Hapus kata "${word}" dari kamus?`)) return;
     await fetch(`/api/vocabulary/${id}`, { method: 'DELETE' });
-    fetchWords();
+    fetchWords(0, false);
   };
 
   const handleSpeak = (word: string) => {
@@ -149,64 +193,17 @@ export default function VocabularyPage() {
     }
   };
 
-  useEffect(() => {
-    let result = allWords;
+  const togglePart = (part: string) => {
+    setSelectedParts((prev) =>
+      prev.includes(part) ? prev.filter((p) => p !== part) : [...prev, part]
+    );
+  };
 
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(
-        (w) =>
-          w.word.toLowerCase().includes(term) ||
-          w.translation.toLowerCase().includes(term) ||
-          (w.definition && w.definition.toLowerCase().includes(term))
-      );
-    }
-
-    if (selectedParts.length > 0) {
-      result = result.filter((w) => selectedParts.includes(w.partOfSpeech || ''));
-    }
-
-    if (selectedDifficulties.length > 0) {
-      result = result.filter((w) => selectedDifficulties.includes(w.difficulty || ''));
-    }
-
-    if (filterTag) {
-      result = result.filter((w) => w.tags && w.tags.includes(filterTag));
-    }
-
-    if (filterStatus === 'learned') {
-      result = result.filter((w) => w.isLearned);
-    } else if (filterStatus === 'unlearned') {
-      result = result.filter((w) => !w.isLearned);
-    }
-
-    // ============================================================
-    // SORTING: Yang Belum Dihafal di Atas, Yang Sudah di Bawah
-    // ============================================================
-    // BUAT SALINAN BARU SEBELUM SORTING (Hindari mutasi)
-    const sorted = [...result].sort((a, b) => {
-      // 1. Urutkan berdasarkan status hafalan
-      if (a.isLearned !== b.isLearned) {
-        return a.isLearned ? 1 : -1; // true -> di bawah, false -> di atas
-      }
-      // 2. Jika status sama, urutkan berdasarkan kata (A-Z)
-      return a.word.localeCompare(b.word);
-    });
-
-    setFilteredWords(sorted);
-  }, [searchTerm, selectedParts, selectedDifficulties, filterTag, filterStatus, allWords]);
-
-  // Reset pagination ke halaman awal setiap filter berubah
-  const filterKey = `${searchTerm}|${selectedParts.join(',')}|${selectedDifficulties.join(',')}|${filterTag}|${filterStatus}`;
-  useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [filterKey]);
-
-  if (loading) {
-    return <div className="text-center py-12">⏳ Memuat data...</div>;
-  }
-
-  const allTags = [...new Set(allWords.flatMap((w) => w.tags || []))];
+  const toggleDifficulty = (diff: string) => {
+    setSelectedDifficulties((prev) =>
+      prev.includes(diff) ? prev.filter((d) => d !== diff) : [...prev, diff]
+    );
+  };
 
   return (
     <div>
@@ -215,8 +212,7 @@ export default function VocabularyPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">📚 Kamus Saya</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm">
-            Menampilkan {Math.min(visibleCount, filteredWords.length)} dari {filteredWords.length} kata
-            {filteredWords.length !== allWords.length ? ` (dari ${allWords.length} total)` : ''}
+            Menampilkan {words.length} dari {totalCount} kata
           </p>
         </div>
         <button
@@ -356,162 +352,201 @@ export default function VocabularyPage() {
       </div>
 
       {/* GRID */}
-      {filteredWords.length === 0 ? (
+      {words.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
           <p className="text-gray-500 dark:text-gray-400 text-lg">Tidak ada kata yang cocok.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filteredWords.slice(0, visibleCount).map((word) => (
-            <div key={word.id} className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition group">
-              {/* Header dengan tombol aksi */}
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                      {word.word}
-                    </h2>
-                    <button
-                      onClick={() => handleSpeak(word.word)}
-                      className="p-1 text-gray-400 hover:text-blue-600 transition rounded-full hover:bg-blue-50 dark:hover:bg-blue-900"
-                      title="Dengar"
-                    >
-                      <Volume2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 mt-1">
-                    <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded">
-                      {word.partOfSpeech || '-'}
-                    </span>
-                    <span
-                      className={`text-xs px-2 py-1 rounded ${
-                        word.difficulty === 'beginner'
-                          ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-                          : word.difficulty === 'intermediate'
-                          ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
-                          : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
-                      }`}
-                    >
-                      {word.difficulty || 'beginner'}
-                    </span>
-                    {word.phonetic && <span className="text-xs text-gray-400 font-mono">{word.phonetic}</span>}
-                  </div>
-                  {word.tags && word.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {word.tags.map((tag) => (
-                        <span key={tag} className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-1 shrink-0 ml-2">
-                  <button
-                    onClick={() => toggleFavorite(word.id, word.isFavorite)}
-                    disabled={favoriting.has(word.id)}
-                    className={`p-1.5 text-gray-400 hover:text-yellow-500 transition ${
-                      favoriting.has(word.id) ? 'opacity-40 cursor-wait' : ''
-                    }`}
-                    title={word.isFavorite ? 'Hapus favorit' : 'Tambah favorit'}
-                  >
-                    {word.isFavorite ? '⭐' : '☆'}
-                  </button>
-                  <button
-                    onClick={() => toggleLearned(word.id, word.isLearned)}
-                    disabled={learning.has(word.id)}
-                    className={`p-1.5 transition ${
-                      learning.has(word.id)
-                        ? 'opacity-40 cursor-wait'
-                        : word.isLearned
-                        ? 'text-green-500'
-                        : 'text-gray-400 hover:text-green-500'
-                    }`}
-                    title={word.isLearned ? 'Tandai belum hafal' : 'Tandai sudah hafal'}
-                  >
-                    {word.isLearned ? '✅' : '📖'}
-                  </button>
-                  <Link
-                    href={`/vocabulary/edit/${word.id}`}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded transition"
-                    title="Edit"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(word.id, word.word)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded transition"
-                    title="Hapus"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {words.map((word) => (
+              <VocabularyCard
+                key={word.id}
+                word={word}
+                favoriting={favoriting}
+                learning={learning}
+                onToggleFavorite={toggleFavorite}
+                onToggleLearned={toggleLearned}
+                onDelete={handleDelete}
+                onSpeak={handleSpeak}
+              />
+            ))}
+          </div>
 
-              {/* Isi */}
-              <div className="mt-3 space-y-1">
-                <p className="text-gray-700 dark:text-gray-300">
-                  <span className="font-medium text-gray-500 dark:text-gray-400">Arti:</span> {word.translation}
-                </p>
-                {word.definition && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    <span className="font-medium text-gray-500 dark:text-gray-400">Definisi:</span> {word.definition}
-                  </p>
-                )}
-                {word.exampleSentence && (
-                  <p className="text-sm text-gray-500 italic mt-1">"{word.exampleSentence}"</p>
-                )}
-              </div>
-
-              {/* Verb forms */}
-              {(word.v1 || word.v2 || word.v3 || word.v_ing || word.v_s) && (
-                <div className="mt-3 flex flex-wrap gap-2 text-xs bg-gray-50 dark:bg-gray-700 p-2 rounded-lg">
-                  <span className="font-medium text-gray-500 dark:text-gray-400">Verb:</span>
-                  {word.v1 && <span><span className="text-gray-400">V1</span> {word.v1}</span>}
-                  {word.v2 && <span><span className="text-gray-400">V2</span> {word.v2}</span>}
-                  {word.v3 && <span><span className="text-gray-400">V3</span> {word.v3}</span>}
-                  {word.v_ing && <span><span className="text-gray-400">-ing</span> {word.v_ing}</span>}
-                  {word.v_s && <span><span className="text-gray-400">-s</span> {word.v_s}</span>}
-                </div>
-              )}
-              {word.plural_form && (
-                <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
-                  <span className="font-medium text-gray-500 dark:text-gray-400">Plural:</span> {word.plural_form}
-                </div>
-              )}
-              <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                {word.synonyms && word.synonyms.length > 0 && (
-                  <span className="bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
-                    Syn: {word.synonyms.join(', ')}
-                  </span>
-                )}
-                {word.antonyms && word.antonyms.length > 0 && (
-                  <span className="bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-1 rounded">
-                    Ant: {word.antonyms.join(', ')}
-                  </span>
-                )}
-              </div>
-              {word.notes && (
-                <div className="mt-2 text-xs text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-2">
-                  📝 {word.notes}
-                </div>
-              )}
+          {/* TOMBOL MUAT LEBIH BANYAK (PAGINATION) */}
+          {words.length < totalCount && (
+            <div className="mt-8 text-center">
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition shadow-sm"
+              >
+                {loadingMore ? 'Memuat...' : `Muat Lebih Banyak (${totalCount - words.length} kata lagi)`}
+              </button>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* TOMBOL MUAT LEBIH BANYAK (PAGINATION) */}
-      {filteredWords.length > visibleCount && (
-        <div className="mt-8 text-center">
-          <button
-            onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition shadow-sm"
-          >
-            Muat Lebih Banyak ({filteredWords.length - visibleCount} kata lagi)
-          </button>
-        </div>
+          )}
+        </>
       )}
     </div>
   );
 }
+
+// ============================================================
+// Memoized VocabularyCard - mencegah re-render tidak perlu saat filter/search
+// ============================================================
+interface VocabularyCardProps {
+  word: Word;
+  favoriting: Set<string>;
+  learning: Set<string>;
+  onToggleFavorite: (id: string, current: boolean) => void;
+  onToggleLearned: (id: string, current: boolean) => void;
+  onDelete: (id: string, word: string) => void;
+  onSpeak: (word: string) => void;
+}
+
+const VocabularyCard = memo(function VocabularyCard({
+  word,
+  favoriting,
+  learning,
+  onToggleFavorite,
+  onToggleLearned,
+  onDelete,
+  onSpeak,
+}: VocabularyCardProps) {
+  return (
+    <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition group">
+      {/* Header dengan tombol aksi */}
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              {word.word}
+            </h2>
+            <button
+              onClick={() => onSpeak(word.word)}
+              className="p-1 text-gray-400 hover:text-blue-600 transition rounded-full hover:bg-blue-50 dark:hover:bg-blue-900"
+              title="Dengar"
+            >
+              <Volume2 className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-1">
+            <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded">
+              {word.partOfSpeech || '-'}
+            </span>
+            <span
+              className={`text-xs px-2 py-1 rounded ${
+                word.difficulty === 'beginner'
+                  ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                  : word.difficulty === 'intermediate'
+                  ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
+                  : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
+              }`}
+            >
+              {word.difficulty || 'beginner'}
+            </span>
+            {word.phonetic && <span className="text-xs text-gray-400 font-mono">{word.phonetic}</span>}
+          </div>
+          {word.tags && word.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {word.tags.map((tag) => (
+                <span key={tag} className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-1 shrink-0 ml-2">
+          <button
+            onClick={() => onToggleFavorite(word.id, word.isFavorite)}
+            disabled={favoriting.has(word.id)}
+            className={`p-1.5 text-gray-400 hover:text-yellow-500 transition ${
+              favoriting.has(word.id) ? 'opacity-40 cursor-wait' : ''
+            }`}
+            title={word.isFavorite ? 'Hapus favorit' : 'Tambah favorit'}
+          >
+            {word.isFavorite ? '⭐' : '☆'}
+          </button>
+          <button
+            onClick={() => onToggleLearned(word.id, word.isLearned)}
+            disabled={learning.has(word.id)}
+            className={`p-1.5 transition ${
+              learning.has(word.id)
+                ? 'opacity-40 cursor-wait'
+                : word.isLearned
+                ? 'text-green-500'
+                : 'text-gray-400 hover:text-green-500'
+            }`}
+            title={word.isLearned ? 'Tandai belum hafal' : 'Tandai sudah hafal'}
+          >
+            {word.isLearned ? '✅' : '📖'}
+          </button>
+          <Link
+            href={`/vocabulary/edit/${word.id}`}
+            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded transition"
+            title="Edit"
+          >
+            <Pencil className="w-4 h-4" />
+          </Link>
+          <button
+            onClick={() => onDelete(word.id, word.word)}
+            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded transition"
+            title="Hapus"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Isi */}
+      <div className="mt-3 space-y-1">
+        <p className="text-gray-700 dark:text-gray-300">
+          <span className="font-medium text-gray-500 dark:text-gray-400">Arti:</span> {word.translation}
+        </p>
+        {word.definition && (
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            <span className="font-medium text-gray-500 dark:text-gray-400">Definisi:</span> {word.definition}
+          </p>
+        )}
+        {word.exampleSentence && (
+          <p className="text-sm text-gray-500 italic mt-1">"{word.exampleSentence}"</p>
+        )}
+      </div>
+
+      {/* Verb forms */}
+      {(word.v1 || word.v2 || word.v3 || word.v_ing || word.v_s) && (
+        <div className="mt-3 flex flex-wrap gap-2 text-xs bg-gray-50 dark:bg-gray-700 p-2 rounded-lg">
+          <span className="font-medium text-gray-500 dark:text-gray-400">Verb:</span>
+          {word.v1 && <span><span className="text-gray-400">V1</span> {word.v1}</span>}
+          {word.v2 && <span><span className="text-gray-400">V2</span> {word.v2}</span>}
+          {word.v3 && <span><span className="text-gray-400">V3</span> {word.v3}</span>}
+          {word.v_ing && <span><span className="text-gray-400">-ing</span> {word.v_ing}</span>}
+          {word.v_s && <span><span className="text-gray-400">-s</span> {word.v_s}</span>}
+        </div>
+      )}
+      {word.plural_form && (
+        <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+          <span className="font-medium text-gray-500 dark:text-gray-400">Plural:</span> {word.plural_form}
+        </div>
+      )}
+      <div className="mt-2 flex flex-wrap gap-2 text-xs">
+        {word.synonyms && word.synonyms.length > 0 && (
+          <span className="bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
+            Syn: {word.synonyms.join(', ')}
+          </span>
+        )}
+        {word.antonyms && word.antonyms.length > 0 && (
+          <span className="bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-1 rounded">
+            Ant: {word.antonyms.join(', ')}
+          </span>
+        )}
+      </div>
+      {word.notes && (
+        <div className="mt-2 text-xs text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-2">
+          📝 {word.notes}
+        </div>
+      )}
+    </div>
+  );
+});

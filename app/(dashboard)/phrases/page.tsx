@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Search, X, Volume2, Pencil, Trash2, PlusCircle } from 'lucide-react';
-import AnimatedList from '@/components/AnimatedList';
-import AnimatedItem from '@/components/AnimatedItem';
+
+const PAGE_SIZE = 20;
+const DEBOUNCE_MS = 250;
 
 interface Phrase {
   id: string;
@@ -22,40 +23,93 @@ interface Phrase {
 export default function PhrasesPage() {
   const router = useRouter();
 
-  const [allPhrases, setAllPhrases] = useState<Phrase[]>([]);
-  const [filteredPhrases, setFilteredPhrases] = useState<Phrase[]>([]);
+  // Server-side pagination state
+  const [phrases, setPhrases] = useState<Phrase[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
+  // Filter state
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
   const [filterTag, setFilterTag] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'learned' | 'unlearned'>('all');
   const [favoriting, setFavoriting] = useState<Set<string>>(new Set());
   const [learning, setLearning] = useState<Set<string>>(new Set());
 
-  const fetchPhrases = async () => {
-    const res = await fetch('/api/phrases');
-    const data = await res.json();
-    setAllPhrases(data);
-    setFilteredPhrases(data);
-    setLoading(false);
-  };
-
+  // Debounce search term
   useEffect(() => {
-    fetchPhrases();
-  }, []);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-  const toggleDifficulty = (diff: string) => {
-    setSelectedDifficulties((prev) =>
-      prev.includes(diff) ? prev.filter((d) => d !== diff) : [...prev, diff]
-    );
-  };
+  // Build query params from filters
+  const buildQueryParams = useCallback(() => {
+    const params = new URLSearchParams();
+    if (debouncedSearchTerm) params.set('search', debouncedSearchTerm);
+    if (selectedDifficulties.length > 0) params.set('difficulty', selectedDifficulties.join(','));
+    if (filterTag) params.set('tag', filterTag);
+    if (filterStatus !== 'all') params.set('status', filterStatus);
+    params.set('limit', PAGE_SIZE.toString());
+    params.set('sortBy', 'phrase');
+    params.set('sortOrder', 'asc');
+    return params.toString();
+  }, [debouncedSearchTerm, selectedDifficulties, filterTag, filterStatus]);
 
+  // Fetch phrases from API with current filters
+  const fetchPhrases = useCallback(async (offset = 0, append = false) => {
+    if (!append) setLoading(true);
+    else setLoadingMore(true);
+
+    try {
+      const params = buildQueryParams();
+      const url = `/api/phrases/search?${params}&offset=${offset}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (append) {
+        setPhrases((prev) => [...prev, ...data.data]);
+      } else {
+        setPhrases(data.data);
+      }
+      setTotalCount(data.total);
+    } catch (error) {
+      console.error('Failed to fetch phrases:', error);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, [buildQueryParams]);
+
+  // Fetch when filters change
+  useEffect(() => {
+    fetchPhrases(0, false);
+  }, [fetchPhrases]);
+
+  // Load more (pagination)
+  const loadMore = useCallback(() => {
+    fetchPhrases(phrases.length, true);
+  }, [fetchPhrases, phrases.length]);
+
+  // Get unique tags from loaded phrases (for filter dropdown)
+  const allTags = [...new Set(phrases.flatMap((p) => p.tags || []))];
+
+  if (loading) {
+    return <div className="text-center py-12">⏳ Memuat data...</div>;
+  }
+
+  // ============================================================
+  // TOGGLE OPTIMISTIK: update UI dulu, PATCH di background.
+  // TIDAK refetch seluruh API setiap klik → jauh lebih responsif.
+  // ============================================================
   const toggleFavorite = async (id: string, current: boolean) => {
     const next = !current;
     setFavoriting((prev) => new Set(prev).add(id));
     // Optimistic update, tanpa refetch semua frasa
-    setAllPhrases((prev) =>
+    setPhrases((prev) =>
       prev.map((p) => (p.id === id ? { ...p, isFavorite: next } : p))
     );
     try {
@@ -66,7 +120,7 @@ export default function PhrasesPage() {
       });
     } catch {
       // Rollback jika gagal
-      setAllPhrases((prev) =>
+      setPhrases((prev) =>
         prev.map((p) => (p.id === id ? { ...p, isFavorite: current } : p))
       );
     } finally {
@@ -82,7 +136,7 @@ export default function PhrasesPage() {
     const next = !current;
     setLearning((prev) => new Set(prev).add(id));
     // Optimistic update, tanpa refetch semua frasa
-    setAllPhrases((prev) =>
+    setPhrases((prev) =>
       prev.map((p) => (p.id === id ? { ...p, isLearned: next } : p))
     );
     try {
@@ -93,7 +147,7 @@ export default function PhrasesPage() {
       });
     } catch {
       // Rollback jika gagal
-      setAllPhrases((prev) =>
+      setPhrases((prev) =>
         prev.map((p) => (p.id === id ? { ...p, isLearned: current } : p))
       );
     } finally {
@@ -108,7 +162,7 @@ export default function PhrasesPage() {
   const handleDelete = async (id: string, phrase: string) => {
     if (!confirm(`Hapus kalimat "${phrase}" dari daftar?`)) return;
     await fetch(`/api/phrases/${id}`, { method: 'DELETE' });
-    fetchPhrases();
+    fetchPhrases(0, false);
   };
 
   const handleSpeak = (phrase: string) => {
@@ -119,53 +173,11 @@ export default function PhrasesPage() {
     }
   };
 
-  useEffect(() => {
-    let result = allPhrases;
-
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.phrase.toLowerCase().includes(term) ||
-          p.translation.toLowerCase().includes(term)
-      );
-    }
-
-    if (selectedDifficulties.length > 0) {
-      result = result.filter((p) => selectedDifficulties.includes(p.difficulty || ''));
-    }
-
-    if (filterTag) {
-      result = result.filter((p) => p.tags && p.tags.includes(filterTag));
-    }
-
-    if (filterStatus === 'learned') {
-      result = result.filter((p) => p.isLearned);
-    } else if (filterStatus === 'unlearned') {
-      result = result.filter((p) => !p.isLearned);
-    }
-
-    // ============================================================
-    // SORTING: Yang Belum Dihafal di Atas, Yang Sudah di Bawah
-    // ============================================================
-    // BUAT SALINAN BARU SEBELUM SORTING (Hindari mutasi)
-    const sorted = [...result].sort((a, b) => {
-      // 1. Urutkan berdasarkan status hafalan
-      if (a.isLearned !== b.isLearned) {
-        return a.isLearned ? 1 : -1; // true -> di bawah, false -> di atas
-      }
-      // 2. Jika status sama, urutkan berdasarkan phrase (A-Z)
-      return a.phrase.localeCompare(b.phrase);
-    });
-
-    setFilteredPhrases(sorted);
-  }, [searchTerm, selectedDifficulties, filterTag, filterStatus, allPhrases]);
-
-  if (loading) {
-    return <div className="text-center py-12">⏳ Memuat data...</div>;
-  }
-
-  const allTags = [...new Set(allPhrases.flatMap((p) => p.tags || []))];
+  const toggleDifficulty = (diff: string) => {
+    setSelectedDifficulties((prev) =>
+      prev.includes(diff) ? prev.filter((d) => d !== diff) : [...prev, diff]
+    );
+  };
 
   return (
     <div>
@@ -174,7 +186,7 @@ export default function PhrasesPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">💬 Kalimat Sehari-hari</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm">
-            {filteredPhrases.length} dari {allPhrases.length} kalimat
+            Menampilkan {phrases.length} dari {totalCount} kalimat
           </p>
         </div>
         <button
@@ -289,94 +301,153 @@ export default function PhrasesPage() {
       </div>
 
       {/* GRID */}
-      {filteredPhrases.length === 0 ? (
+      {phrases.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
           <p className="text-gray-500 dark:text-gray-400 text-lg">Tidak ada kalimat yang cocok.</p>
         </div>
       ) : (
-        <AnimatedList className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredPhrases.map((p) => (
-            <AnimatedItem key={p.id} className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition group">
-              {/* Header dengan tombol aksi */}
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                      {p.phrase}
-                    </h2>
-                    <button
-                      onClick={() => handleSpeak(p.phrase)}
-                      className="p-1 text-gray-400 hover:text-blue-600 transition rounded-full hover:bg-blue-50 dark:hover:bg-blue-900"
-                      title="Dengar"
-                    >
-                      <Volume2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 mt-1">
-                    <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded">
-                      {p.difficulty || 'beginner'}
-                    </span>
-                    {p.phonetic && <span className="text-xs text-gray-400 font-mono">{p.phonetic}</span>}
-                  </div>
-                  {p.tags && p.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {p.tags.map((tag) => (
-                        <span key={tag} className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-1 shrink-0 ml-2">
-                  <button
-                    onClick={() => toggleFavorite(p.id, p.isFavorite)}
-                    className="p-1.5 text-gray-400 hover:text-yellow-500 transition"
-                    title={p.isFavorite ? 'Hapus favorit' : 'Tambah favorit'}
-                  >
-                    {p.isFavorite ? '⭐' : '☆'}
-                  </button>
-                  <button
-                    onClick={() => toggleLearned(p.id, p.isLearned)}
-                    className={`p-1.5 transition ${
-                      p.isLearned ? 'text-green-500' : 'text-gray-400 hover:text-green-500'
-                    }`}
-                    title={p.isLearned ? 'Tandai belum hafal' : 'Tandai sudah hafal'}
-                  >
-                    {p.isLearned ? '✅' : '📖'}
-                  </button>
-                  <Link
-                    href={`/phrases/edit/${p.id}`}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded transition"
-                    title="Edit"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(p.id, p.phrase)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded transition"
-                    title="Hapus"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {phrases.map((p) => (
+              <PhraseCard
+                key={p.id}
+                phrase={p}
+                favoriting={favoriting}
+                learning={learning}
+                onToggleFavorite={toggleFavorite}
+                onToggleLearned={toggleLearned}
+                onDelete={handleDelete}
+                onSpeak={handleSpeak}
+              />
+            ))}
+          </div>
 
-              {/* Isi */}
-              <div className="mt-3">
-                <p className="text-gray-700 dark:text-gray-300">
-                  <span className="font-medium text-gray-500 dark:text-gray-400">Arti:</span> {p.translation}
-                </p>
-                {p.notes && (
-                  <div className="mt-2 text-xs text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-2">
-                    📝 {p.notes}
-                  </div>
-                )}
-              </div>
-            </AnimatedItem>
-          ))}
-        </AnimatedList>
+          {/* TOMBOL MUAT LEBIH BANYAK (PAGINATION) */}
+          {phrases.length < totalCount && (
+            <div className="mt-8 text-center">
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition shadow-sm"
+              >
+                {loadingMore ? 'Memuat...' : `Muat Lebih Banyak (${totalCount - phrases.length} kalimat lagi)`}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
+
+// ============================================================
+// Memoized PhraseCard - mencegah re-render tidak perlu saat filter/search
+// ============================================================
+interface PhraseCardProps {
+  phrase: Phrase;
+  favoriting: Set<string>;
+  learning: Set<string>;
+  onToggleFavorite: (id: string, current: boolean) => void;
+  onToggleLearned: (id: string, current: boolean) => void;
+  onDelete: (id: string, phrase: string) => void;
+  onSpeak: (phrase: string) => void;
+}
+
+const PhraseCard = memo(function PhraseCard({
+  phrase,
+  favoriting,
+  learning,
+  onToggleFavorite,
+  onToggleLearned,
+  onDelete,
+  onSpeak,
+}: PhraseCardProps) {
+  return (
+    <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition group">
+      {/* Header dengan tombol aksi */}
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              {phrase.phrase}
+            </h2>
+            <button
+              onClick={() => onSpeak(phrase.phrase)}
+              className="p-1 text-gray-400 hover:text-blue-600 transition rounded-full hover:bg-blue-50 dark:hover:bg-blue-900"
+              title="Dengar"
+            >
+              <Volume2 className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-1">
+            <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded">
+              {phrase.difficulty || 'beginner'}
+            </span>
+            {phrase.phonetic && <span className="text-xs text-gray-400 font-mono">{phrase.phonetic}</span>}
+          </div>
+          {phrase.tags && phrase.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {phrase.tags.map((tag) => (
+                <span key={tag} className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-1 shrink-0 ml-2">
+          <button
+            onClick={() => onToggleFavorite(phrase.id, phrase.isFavorite)}
+            disabled={favoriting.has(phrase.id)}
+            className={`p-1.5 text-gray-400 hover:text-yellow-500 transition ${
+              favoriting.has(phrase.id) ? 'opacity-40 cursor-wait' : ''
+            }`}
+            title={phrase.isFavorite ? 'Hapus favorit' : 'Tambah favorit'}
+          >
+            {phrase.isFavorite ? '⭐' : '☆'}
+          </button>
+          <button
+            onClick={() => onToggleLearned(phrase.id, phrase.isLearned)}
+            disabled={learning.has(phrase.id)}
+            className={`p-1.5 transition ${
+              learning.has(phrase.id)
+                ? 'opacity-40 cursor-wait'
+                : phrase.isLearned
+                ? 'text-green-500'
+                : 'text-gray-400 hover:text-green-500'
+            }`}
+            title={phrase.isLearned ? 'Tandai belum hafal' : 'Tandai sudah hafal'}
+          >
+            {phrase.isLearned ? '✅' : '📖'}
+          </button>
+          <Link
+            href={`/phrases/edit/${phrase.id}`}
+            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded transition"
+            title="Edit"
+          >
+            <Pencil className="w-4 h-4" />
+          </Link>
+          <button
+            onClick={() => onDelete(phrase.id, phrase.phrase)}
+            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded transition"
+            title="Hapus"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Isi */}
+      <div className="mt-3">
+        <p className="text-gray-700 dark:text-gray-300">
+          <span className="font-medium text-gray-500 dark:text-gray-400">Arti:</span> {phrase.translation}
+        </p>
+        {phrase.notes && (
+          <div className="mt-2 text-xs text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-2">
+            📝 {phrase.notes}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});

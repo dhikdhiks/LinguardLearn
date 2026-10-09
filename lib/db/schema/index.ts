@@ -8,6 +8,7 @@ import {
   uniqueIndex,
   index,
   boolean,
+  uuid,
 } from 'drizzle-orm/pg-core';
 
 export const difficultyEnum = pgEnum('difficulty', ['beginner', 'intermediate', 'advanced']);
@@ -206,3 +207,98 @@ export const userPhrases = pgTable(
     userPhraseIdx: uniqueIndex('user_phrase_idx').on(table.userId, table.phraseId),
   })
 );
+
+// ============================================
+// QUIZ CUSTOM - Tabel untuk kuis buatan user
+// ============================================
+export const quizCustomSets = pgTable(
+  'quiz_custom_sets',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description'),
+    // Tipe konten: vocabulary, phrases, mixed
+    contentType: text('content_type').notNull().default('vocabulary'),
+    // Arah soal: source_to_target (EN→ID), target_to_source (ID→EN), mixed
+    direction: text('direction').notNull().default('source_to_target'),
+    // Tipe pertanyaan: type_in (input manual), multiple_choice, mixed
+    questionType: text('question_type').notNull().default('type_in'),
+    // Jumlah soal per sesi (0 = semua)
+    questionsPerSession: integer('questions_per_session').default(0),
+    // Acak urutan soal
+    shuffleQuestions: boolean('shuffle_questions').default(true),
+    // Acak opsi multiple choice
+    shuffleOptions: boolean('shuffle_options').default(true),
+    isPublic: boolean('is_public').default(false),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userQuizIdx: index('user_quiz_idx').on(table.userId),
+    publicQuizIdx: index('public_quiz_idx').on(table.isPublic),
+  })
+);
+
+export const quizCustomSetItems = pgTable(
+  'quiz_custom_set_items',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    setId: text('set_id')
+      .notNull()
+      .references(() => quizCustomSets.id, { onDelete: 'cascade' }),
+    // Referensi ke vocabulary atau phrases
+    itemType: text('item_type').notNull(), // 'vocabulary' | 'phrases'
+    itemId: text('item_id').notNull(),
+    // Override untuk soal ini (opsional - freeze jawaban)
+    customQuestion: text('custom_question'),
+    customAnswer: text('custom_answer'),
+    // Urutan manual (0 = auto)
+    sortOrder: integer('sort_order').default(0),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    setItemIdx: uniqueIndex('set_item_idx').on(table.setId, table.itemType, table.itemId),
+    setOrderIdx: index('set_order_idx').on(table.setId, table.sortOrder),
+  })
+);
+
+export const quizCustomAttempts = pgTable(
+  'quiz_custom_attempts',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    setId: text('set_id')
+      .notNull()
+      .references(() => quizCustomSets.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    score: integer('score').notNull(),
+    totalQuestions: integer('total_questions').notNull(),
+    correctAnswers: integer('correct_answers').notNull(),
+    wrongAnswers: integer('wrong_answers').notNull(),
+    durationSeconds: integer('duration_seconds'),
+    // Detail jawaban per soal (JSON)
+    answers: jsonb('answers').$type<QuizAnswer[]>().default([]),
+    startedAt: timestamp('started_at').defaultNow().notNull(),
+    endedAt: timestamp('ended_at'),
+  },
+  (table) => ({
+    attemptSetIdx: index('attempt_set_idx').on(table.setId),
+    attemptUserIdx: index('attempt_user_idx').on(table.userId),
+    attemptStartedIdx: index('attempt_started_idx').on(table.startedAt),
+  })
+);
+
+// Type untuk jawaban di quizCustomAttempts
+export type QuizAnswer = {
+  itemId: string;
+  itemType: 'vocabulary' | 'phrases';
+  question: string;
+  correctAnswer: string;
+  userAnswer: string;
+  isCorrect: boolean;
+  timeSpentMs?: number;
+};
