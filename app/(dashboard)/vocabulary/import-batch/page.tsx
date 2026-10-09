@@ -14,59 +14,33 @@ export default function BatchImportPage() {
 
   // ============================================================
   // 1. IMPORT DARI TEKS (satu kata per baris)
+  //    Dikirim sebagai 1 request → server lookup paralel + bulk insert
   // ============================================================
   const handleImportFromText = async () => {
     if (!text.trim()) return;
-    const words = text.split('\n').map(w => w.trim()).filter(Boolean);
+    const words = [...new Set(text.split('\n').map((w) => w.trim()).filter(Boolean))];
     if (words.length === 0) return;
 
     setLoading(true);
     setResult(null);
-    let success = 0;
-    let failed: string[] = [];
 
-    for (const word of words) {
-      try {
-        // Cari data dari dictionary API
-        const res = await fetch(`/api/dictionary?word=${encodeURIComponent(word)}`);
-        const data = await res.json();
-
-        if (!res.ok) {
-          failed.push(`${word} (tidak ditemukan)`);
-          continue;
-        }
-
-        // Bentuk FormData untuk dikirim ke add-word API
-        const formData = new FormData();
-        formData.append('word', data.word || word);
-        formData.append('translation', data.translation || '');
-        formData.append('definition', data.definition || '');
-        formData.append('partOfSpeech', data.partOfSpeech || '');
-        formData.append('difficulty', 'beginner');
-        formData.append('exampleSentence', data.exampleSentence || '');
-        formData.append('phonetic', data.phonetic || '');
-        formData.append('v1', data.v1 || '');
-        formData.append('v2', data.v2 || '');
-        formData.append('v3', data.v3 || '');
-        formData.append('v_ing', data.v_ing || '');
-        formData.append('v_s', data.v_s || '');
-        formData.append('synonyms', data.synonyms?.join(', ') || '');
-        formData.append('antonyms', data.antonyms?.join(', ') || '');
-        formData.append('tags', '[]');
-
-        const saveRes = await fetch('/api/add-word', { method: 'POST', body: formData });
-        if (saveRes.ok) {
-          success++;
-        } else {
-          failed.push(`${word} (gagal simpan)`);
-        }
-      } catch {
-        failed.push(`${word} (error)`);
+    try {
+      const res = await fetch('/api/vocabulary/import-words', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ words }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Gagal import');
+        return;
       }
+      setResult({ success: data.imported, failed: data.failed ?? [] });
+    } catch {
+      alert('Error import');
+    } finally {
+      setLoading(false);
     }
-
-    setResult({ success, failed });
-    setLoading(false);
   };
 
   // ============================================================

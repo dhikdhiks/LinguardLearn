@@ -19,8 +19,10 @@ export default function ImportPhrasesPage() {
 
     setLoading(true);
     setResult(null);
-    let success = 0;
-    let failed: string[] = [];
+
+    // Parse semua baris dulu, lalu kirim SEKALI (bulk)
+    const items: Array<{ phrase: string; translation: string }> = [];
+    const failed: string[] = [];
 
     for (const line of lines) {
       // Format: "phrase|translation" atau "phrase,translation"
@@ -35,23 +37,35 @@ export default function ImportPhrasesPage() {
         failed.push(`${line} (format salah)`);
         continue;
       }
-
-      try {
-        const res = await fetch('/api/phrases/import', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify([{ phrase, translation }]),
-        });
-        const data = await res.json();
-        if (res.ok && data.imported > 0) success++;
-        else failed.push(`${phrase} (gagal)`);
-      } catch {
-        failed.push(`${phrase} (error)`);
-      }
+      items.push({ phrase, translation });
     }
 
-    setResult({ success, failed });
-    setLoading(false);
+    if (items.length === 0) {
+      setResult({ success: 0, failed });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/phrases/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(items),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setResult({ success: data.imported, failed });
+        setPreviewData([]);
+      } else {
+        alert(data.error || 'Gagal import');
+        setResult({ success: 0, failed });
+      }
+    } catch {
+      alert('Error import');
+      setResult({ success: 0, failed });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
