@@ -2,6 +2,18 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db, vocabulary, userVocabulary } from '@/lib/db';
 import { eq, and, or, ilike, sql, desc, asc, inArray, isNull } from 'drizzle-orm';
+import { partOfSpeechEnum, difficultyEnum } from '@/lib/db/schema';
+
+const VALID_PARTS_OF_SPEECH = partOfSpeechEnum.enumValues;
+const VALID_DIFFICULTIES = difficultyEnum.enumValues;
+
+/**
+ * Sanitize search term for tsquery - remove special characters
+ * websearch_to_tsquery handles this automatically (supports quotes, OR, -)
+ */
+function sanitizeSearchTerm(term: string): string {
+  return term.trim().replace(/[^\w\s\-']/g, ' ');
+}
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -18,20 +30,30 @@ export async function GET(request: Request) {
   const tag = searchParams.get('tag') || '';
   const limit = parseInt(searchParams.get('limit') || '50', 10);
   const offset = parseInt(searchParams.get('offset') || '0', 10);
-  const sortBy = searchParams.get('sortBy') || 'word';
-  const sortOrder = searchParams.get('sortOrder') || 'asc';
+  const sortBy = searchParams.get('sortBy') || 'relevance'; // Default to relevance
+  const sortOrder = searchParams.get('sortOrder') || 'desc'; // Desc for relevance (highest first)
 
   // Build where conditions
   const conditions = [];
 
-  // Search across word, translation, definition
+  // Build tsquery for full-text search if search term provided
+  let tsquerySql: string | null = null;
+
   if (search) {
-    const term = `%${search.toLowerCase()}%`;
+    const sanitized = sanitizeSearchTerm(search);
+    // Use websearch_to_tsquery for better query parsing (supports quotes, OR, -)
+    tsquerySql = `websearch_to_tsquery('english', ${sanitized.replace(/'/g, "''")})`;
+    const tsquery = sql.raw(tsquerySql);
+
+    // Use full-text search vector if available (migration 0008)
+    // Fallback to ILIKE if search_vector column doesn't exist yet
+    // Using sql.raw for generated column not in schema
     conditions.push(
       or(
-        ilike(vocabulary.word, term),
-        ilike(vocabulary.translation, term),
-        ilike(vocabulary.definition, term)
+        sql`${sql.raw('vocabulary.search_vector')} @@ ${tsquery}`,
+        ilike(vocabulary.word, `%${search.toLowerCase()}%`),
+        ilike(vocabulary.translation, `%${search.toLowerCase()}%`),
+        ilike(vocabulary.definition, `%${search.toLowerCase()}%`)
       )
     );
   }
@@ -39,20 +61,22 @@ export async function GET(request: Request) {
   // Handle multiple partOfSpeech values (comma-separated)
   if (partOfSpeech) {
     const parts = partOfSpeech.split(',').filter(Boolean);
-    if (parts.length === 1) {
-      conditions.push(eq(vocabulary.partOfSpeech, parts[0] as any));
-    } else if (parts.length > 1) {
-      conditions.push(inArray(vocabulary.partOfSpeech, parts as any));
+    const validParts = parts.filter(p => VALID_PARTS_OF_SPEECH.includes(p as any));
+    if (validParts.length === 1) {
+      conditions.push(eq(vocabulary.partOfSpeech, validParts[0] as any));
+    } else if (validParts.length > 1) {
+      conditions.push(inArray(vocabulary.partOfSpeech, validParts as any));
     }
   }
 
   // Handle multiple difficulty values (comma-separated)
   if (difficulty) {
     const diffs = difficulty.split(',').filter(Boolean);
-    if (diffs.length === 1) {
-      conditions.push(eq(vocabulary.difficulty, diffs[0] as any));
-    } else if (diffs.length > 1) {
-      conditions.push(inArray(vocabulary.difficulty, diffs as any));
+    const validDiffs = diffs.filter(d => VALID_DIFFICULTIES.includes(d as any));
+    if (validDiffs.length === 1) {
+      conditions.push(eq(vocabulary.difficulty, validDiffs[0] as any));
+    } else if (validDiffs.length > 1) {
+      conditions.push(inArray(vocabulary.difficulty, validDiffs as any));
     }
   }
 
@@ -86,9 +110,29 @@ export async function GET(request: Request) {
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
+  // Build ranking expression using PostgreSQL's ts_rank_cd (cover density ranking)
+  // This gives proper relevance scores based on:
+  // - Frequency of term in document
+  // - Proximity of terms (for multi-word queries)
+  // - Position (earlier = higher rank)
+  // - Weight (A=word, B=translation, C=definition, D=example)
+  const rankingExpr = search && tsquerySql
+    ? sql`ts_rank_cd(${sql.raw('vocabulary.search_vector')}, ${sql.raw(tsquerySql)}, 32)` // 32 = rank normalization by document length
+    : sql`0`;
+
   // Order by
-  const orderByCol = sortBy === 'word' ? vocabulary.word : vocabulary.createdAt;
-  const orderBy = sortOrder === 'desc' ? desc(orderByCol) : asc(orderByCol);
+  let orderBy;
+  if (sortBy === 'relevance' && search) {
+    // Primary: ts_rank_cd relevance (desc), Secondary: word length (asc - shorter first), Tertiary: alphabetical
+    orderBy = [
+      desc(rankingExpr),
+      asc(sql`LENGTH(${vocabulary.word})`),
+      asc(vocabulary.word),
+    ];
+  } else {
+    const orderByCol = sortBy === 'word' ? vocabulary.word : vocabulary.createdAt;
+    orderBy = sortOrder === 'desc' ? desc(orderByCol) : asc(orderByCol);
+  }
 
   // Execute query
   const [rows, totalResult] = await Promise.all([
@@ -114,11 +158,13 @@ export async function GET(request: Request) {
         tags: vocabulary.tags,
         isFavorite: userVocabulary.isFavorite,
         isLearned: userVocabulary.isLearned,
+        // Include relevance score for debugging/frontend
+        ...(search ? { relevance: rankingExpr } : {}),
       })
       .from(vocabulary)
       .leftJoin(userVocabulary, userVocabJoin)
       .where(whereClause)
-      .orderBy(orderBy)
+      .orderBy(...(Array.isArray(orderBy) ? orderBy : [orderBy]))
       .limit(limit)
       .offset(offset),
     db

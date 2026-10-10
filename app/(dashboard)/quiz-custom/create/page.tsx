@@ -522,7 +522,10 @@ export default function QuizCustomCreatePage() {
                   onChange={(e) => setIsPublic(e.target.checked)}
                   className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Publik (bisa diakses user lain)</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Publik — user lain bisa lihat & kerjakan kuis ini</span>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Jika dicentang, kuis akan muncul di halaman JELAJAH KUIS PUBLIK dan siapa saja bisa memainkannya.
+                </p>
               </label>
             </div>
           </div>

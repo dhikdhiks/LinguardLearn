@@ -97,10 +97,10 @@ export default function QuizCustomHistoryPage() {
         {/* HEADER */}
         <div className="mb-6">
           <Link
-            href={`/quiz-custom/${setId}`}
+            href="/quiz-custom"
             className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4"
           >
-            <ArrowLeft className="w-4 h-4" /> Kembali ke Kuis
+            <ArrowLeft className="w-4 h-4" /> Kembali ke Daftar Kuis
           </Link>
 
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">

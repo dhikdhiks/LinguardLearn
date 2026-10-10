@@ -18,11 +18,16 @@ export async function POST(
   const [set] = await db
     .select()
     .from(quizCustomSets)
-    .where(and(eq(quizCustomSets.id, id), eq(quizCustomSets.userId, session.user.id)))
+    .where(eq(quizCustomSets.id, id))
     .limit(1);
 
   if (!set) {
     return NextResponse.json({ error: 'Kuis tidak ditemukan' }, { status: 404 });
+  }
+
+  // Jika tidak dipublikasikan, hanya pemilik yang bisa memainkannya
+  if (!set.isPublic && set.userId !== session.user.id) {
+    return NextResponse.json({ error: 'Kuis ini bersifat pribadi' }, { status: 403 });
   }
 
   const items = await db
@@ -137,7 +142,10 @@ export async function POST(
       const correctAnswer = q.correctAnswer;
       const pool = q.itemType === 'vocabulary' ? allVocab : allPhrases;
       const distractors = pool
-        .filter(p => (q.itemType === 'vocabulary' ? p.translation : p.translation) !== correctAnswer)
+        .filter(p => {
+          const pText = q.itemType === 'vocabulary' ? p.translation : p.translation;
+          return pText !== correctAnswer;
+        })
         .sort(() => Math.random() - 0.5)
         .slice(0, 3)
         .map(p => q.itemType === 'vocabulary' ? p.translation : p.translation);

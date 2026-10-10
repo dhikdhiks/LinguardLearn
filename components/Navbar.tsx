@@ -16,6 +16,7 @@ import {
   Download,
   Menu,
   X,
+  Users,
 } from 'lucide-react';
 import { signOut } from "next-auth/react";
 
@@ -59,6 +60,9 @@ export default function Navbar({ user }: NavbarProps) {
             </NavLink>
             <NavLink href="/quiz-custom" icon={<Brain className="w-4 h-4" />}>
               Kuis
+            </NavLink>
+            <NavLink href="/quiz-custom/browse" icon={<Users className="w-4 h-4" />}>
+              Kuis Publik
             </NavLink>
 
             {/* Export Dropdown */}
@@ -157,6 +161,9 @@ export default function Navbar({ user }: NavbarProps) {
             </MobileNavLink>
             <MobileNavLink href="/quiz-custom" icon={<Brain className="w-5 h-5" />}>
               Kuis
+            </MobileNavLink>
+            <MobileNavLink href="/quiz-custom/browse" icon={<Users className="w-5 h-5" />}>
+              Kuis Publik
             </MobileNavLink>
             <div className="pl-4 space-y-1">
               <MobileNavLink href="/vocabulary/export" icon={<Download className="w-4 h-4" />}>

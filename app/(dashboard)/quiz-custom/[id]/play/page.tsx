@@ -115,14 +115,14 @@ export default function QuizCustomPlayPage() {
     return user === correct;
   };
 
-  const handleSubmitAnswer = () => {
+  const handleSubmitAnswer = (submittedAnswer?: string) => {
     if (!currentQuestion) return;
 
     let finalAnswer = '';
     if (currentQuestion.isMultipleChoice) {
-      finalAnswer = selectedOption || '';
+      finalAnswer = submittedAnswer ?? (selectedOption || '');
     } else {
-      finalAnswer = userInput;
+      finalAnswer = submittedAnswer ?? userInput;
     }
 
     if (!finalAnswer.trim()) {
@@ -303,7 +303,7 @@ export default function QuizCustomPlayPage() {
                     key={i}
                     onClick={() => {
                       setSelectedOption(opt);
-                      handleSubmitAnswer();
+                      handleSubmitAnswer(opt);
                     }}
                     disabled={showResult}
                     className={`w-full text-left p-4 rounded-xl border-2 transition ${
@@ -366,7 +366,7 @@ export default function QuizCustomPlayPage() {
                     className="w-full px-4 py-3 text-lg border-2 border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   />
                   <button
-                    onClick={handleSubmitAnswer}
+                    onClick={() => handleSubmitAnswer()}
                     disabled={!userInput.trim()}
                     className="w-full mt-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 rounded-xl transition shadow-sm"
                   >

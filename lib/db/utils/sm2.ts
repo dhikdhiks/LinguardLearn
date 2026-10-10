@@ -63,21 +63,23 @@ export async function updateVocabularyProgress(
   }
 
   const record = existing[0];
+  // Convert easeFactor from string (numeric) to number
+  const currentEaseFactor = record.easeFactor ? parseFloat(record.easeFactor as unknown as string) : 2.5;
   const {
     newEaseFactor: easeFactor,
     newRepetition: repetition,
     newInterval: interval,
-  } = calculateSM2(record.easeFactor || 2.5, record.repetition || 0, quality);
+  } = calculateSM2(currentEaseFactor, record.repetition || 0, quality);
 
   const nextReview = quality >= 3
     ? new Date(Date.now() + interval * 24 * 60 * 60 * 1000)
     : new Date(Date.now() + 24 * 60 * 60 * 1000); // besok
 
-  // 2. Update database
+  // 2. Update database - easeFactor needs to be string for numeric column
   await db
     .update(userVocabulary)
     .set({
-      easeFactor,
+      easeFactor: easeFactor.toFixed(2),
       repetition,
       interval,
       lastReviewedAt: new Date(),

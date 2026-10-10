@@ -176,10 +176,10 @@ export default function QuizCustomResultPage() {
                 <RefreshCw className="w-4 h-4" /> Main Lagi
               </button>
               <Link
-                href={`/quiz-custom/${setId}`}
+                href={`/quiz-custom/${setId}/history`}
                 className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-5 py-2.5 rounded-lg font-medium transition"
               >
-                <ArrowLeft className="w-4 h-4" /> Ke Detail Kuis
+                <ArrowLeft className="w-4 h-4" /> Riwayat Kuis
               </Link>
             </div>
           </div>
@@ -251,10 +251,10 @@ export default function QuizCustomResultPage() {
             <RefreshCw className="w-4 h-4" /> Main Lagi
           </button>
           <Link
-            href={`/quiz-custom/${setId}`}
+            href={`/quiz-custom/${setId}/history`}
             className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-5 py-2.5 rounded-lg font-medium transition"
           >
-            <ArrowLeft className="w-4 h-4" /> Ke Detail Kuis
+            <ArrowLeft className="w-4 h-4" /> Riwayat Kuis
           </Link>
           <Link
             href="/quiz-custom"

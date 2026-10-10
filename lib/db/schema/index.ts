@@ -9,6 +9,8 @@ import {
   index,
   boolean,
   uuid,
+  numeric,
+  // tsVector is not directly exported, use text with custom type
 } from 'drizzle-orm/pg-core';
 
 export const difficultyEnum = pgEnum('difficulty', ['beginner', 'intermediate', 'advanced']);
@@ -79,6 +81,9 @@ export const vocabulary = pgTable(
   })
 );
 
+// Full-text search column is added via migration as a generated column
+// Not included in schema since it's database-generated
+
 // ============================================
 // TABEL USER_VOCABULARY (progres belajar user)
 // ============================================
@@ -100,7 +105,7 @@ export const userVocabulary = pgTable(
     wrongCount: integer('wrong_count').default(0),
     lastReviewedAt: timestamp('last_reviewed_at'),
     nextReviewAt: timestamp('next_review_at'),
-    easeFactor: integer('ease_factor').default(2.5),
+    easeFactor: numeric('ease_factor', { precision: 4, scale: 2 }).default('2.50'),
     interval: integer('interval').default(0),
     repetition: integer('repetition').default(0),
     createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -168,6 +173,7 @@ export const phrases = pgTable(
     // NOTE: isFavorite/isLearned kini PER-USER (lihat userPhrases)
     tags: text('tags').array().default([]),
     notes: text('notes'),
+
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
@@ -175,6 +181,9 @@ export const phrases = pgTable(
     phraseIdx: uniqueIndex('phrase_idx').on(table.phrase),
   })
 );
+
+// Full-text search column is added via migration as a generated column
+// Not included in schema since it's database-generated
 
 // ============================================
 // TABEL USER_PHRASES (progres & flag per-user)
@@ -197,7 +206,7 @@ export const userPhrases = pgTable(
     wrongCount: integer('wrong_count').default(0),
     lastReviewedAt: timestamp('last_reviewed_at'),
     nextReviewAt: timestamp('next_review_at'),
-    easeFactor: integer('ease_factor').default(2.5),
+    easeFactor: numeric('ease_factor', { precision: 4, scale: 2 }).default('2.50'),
     interval: integer('interval').default(0),
     repetition: integer('repetition').default(0),
     createdAt: timestamp('created_at').defaultNow().notNull(),

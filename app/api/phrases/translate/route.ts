@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { withRateLimit, getIpIdentifier, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -8,24 +9,29 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Phrase is required' }, { status: 400 });
   }
 
-  try {
-    // 1. Terjemahan menggunakan MyMemory
-    const translateRes = await fetch(
-      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(phrase)}&langpair=en|id`
-    );
-    const translateData = await translateRes.json();
-    const translation = translateData.responseData?.translatedText || '';
+  // Apply rate limiting
+  const rateLimitedHandler = withRateLimit(RATE_LIMIT_CONFIGS.phraseTranslate, getIpIdentifier);
 
-    // 2. Phonetic: tidak ada API gratis untuk phonetic kalimat.
-    // Kita hanya kirim translation, phonetic dikosongkan.
+  return rateLimitedHandler(request, async (req) => {
+    try {
+      // 1. Terjemahan menggunakan MyMemory
+      const translateRes = await fetch(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(phrase)}&langpair=en|id`
+      );
+      const translateData = await translateRes.json();
+      const translation = translateData.responseData?.translatedText || '';
 
-    return NextResponse.json({
-      phrase,
-      translation,
-      phonetic: '', // kosong, user bisa isi manual
-    });
-  } catch (error) {
-    console.error('Translate error:', error);
-    return NextResponse.json({ error: 'Gagal menerjemahkan' }, { status: 500 });
-  }
+      // 2. Phonetic: tidak ada API gratis untuk phonetic kalimat.
+      // Kita hanya kirim translation, phonetic dikosongkan.
+
+      return NextResponse.json({
+        phrase,
+        translation,
+        phonetic: '', // kosong, user bisa isi manual
+      });
+    } catch (error) {
+      console.error('Translate error:', error);
+      return NextResponse.json({ error: 'Gagal menerjemahkan' }, { status: 500 });
+    }
+  });
 }

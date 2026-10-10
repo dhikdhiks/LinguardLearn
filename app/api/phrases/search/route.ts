@@ -2,6 +2,17 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db, phrases, userPhrases } from '@/lib/db';
 import { eq, and, or, ilike, sql, desc, asc, inArray, isNull } from 'drizzle-orm';
+import { difficultyEnum } from '@/lib/db/schema';
+
+const VALID_DIFFICULTIES = difficultyEnum.enumValues;
+
+/**
+ * Sanitize search term for tsquery - remove special characters
+ * websearch_to_tsquery handles this automatically (supports quotes, OR, -)
+ */
+function sanitizeSearchTerm(term: string): string {
+  return term.trim().replace(/[^\w\s\-']/g, ' ');
+}
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -17,19 +28,30 @@ export async function GET(request: Request) {
   const tag = searchParams.get('tag') || '';
   const limit = parseInt(searchParams.get('limit') || '50', 10);
   const offset = parseInt(searchParams.get('offset') || '0', 10);
-  const sortBy = searchParams.get('sortBy') || 'phrase';
-  const sortOrder = searchParams.get('sortOrder') || 'asc';
+  const sortBy = searchParams.get('sortBy') || 'relevance'; // Default to relevance
+  const sortOrder = searchParams.get('sortOrder') || 'desc'; // Desc for relevance (highest first)
 
   // Build where conditions
   const conditions = [];
 
-  // Search across phrase, translation
+  // Build tsquery for full-text search if search term provided
+  let tsquerySql: string | null = null;
+
   if (search) {
-    const term = `%${search.toLowerCase()}%`;
+    const sanitized = sanitizeSearchTerm(search);
+    // Use websearch_to_tsquery for better query parsing (supports quotes, OR, -)
+    tsquerySql = `websearch_to_tsquery('english', ${sanitized.replace(/'/g, "''")})`;
+    const tsquery = sql.raw(tsquerySql);
+
+    // Use full-text search vector if available (migration 0008)
+    // Fallback to ILIKE if search_vector column doesn't exist yet
+    // Using sql.raw for generated column not in schema
     conditions.push(
       or(
-        ilike(phrases.phrase, term),
-        ilike(phrases.translation, term)
+        sql`${sql.raw('phrases.search_vector')} @@ ${tsquery}`,
+        ilike(phrases.phrase, `%${search.toLowerCase()}%`),
+        ilike(phrases.translation, `%${search.toLowerCase()}%`),
+        ilike(phrases.notes, `%${search.toLowerCase()}%`)
       )
     );
   }
@@ -37,10 +59,11 @@ export async function GET(request: Request) {
   // Handle multiple difficulty values (comma-separated)
   if (difficulty) {
     const diffs = difficulty.split(',').filter(Boolean);
-    if (diffs.length === 1) {
-      conditions.push(eq(phrases.difficulty, diffs[0] as any));
-    } else if (diffs.length > 1) {
-      conditions.push(inArray(phrases.difficulty, diffs as any));
+    const validDiffs = diffs.filter(d => VALID_DIFFICULTIES.includes(d as any));
+    if (validDiffs.length === 1) {
+      conditions.push(eq(phrases.difficulty, validDiffs[0] as any));
+    } else if (validDiffs.length > 1) {
+      conditions.push(inArray(phrases.difficulty, validDiffs as any));
     }
   }
 
@@ -74,9 +97,25 @@ export async function GET(request: Request) {
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
+  // Build ranking expression using PostgreSQL's ts_rank_cd (cover density ranking)
+  // Weight: A=phrase, B=translation, C=notes
+  const rankingExpr = search && tsquerySql
+    ? sql`ts_rank_cd(${sql.raw('phrases.search_vector')}, ${sql.raw(tsquerySql)}, 32)` // 32 = rank normalization by document length
+    : sql`0`;
+
   // Order by
-  const orderByCol = sortBy === 'phrase' ? phrases.phrase : phrases.createdAt;
-  const orderBy = sortOrder === 'desc' ? desc(orderByCol) : asc(orderByCol);
+  let orderBy;
+  if (sortBy === 'relevance' && search) {
+    // Primary: ts_rank_cd relevance (desc), Secondary: phrase length (asc - shorter first), Tertiary: alphabetical
+    orderBy = [
+      desc(rankingExpr),
+      asc(sql`LENGTH(${phrases.phrase})`),
+      asc(phrases.phrase),
+    ];
+  } else {
+    const orderByCol = sortBy === 'phrase' ? phrases.phrase : phrases.createdAt;
+    orderBy = sortOrder === 'desc' ? desc(orderByCol) : asc(orderByCol);
+  }
 
   // Execute query
   const [rows, totalResult] = await Promise.all([
@@ -91,11 +130,13 @@ export async function GET(request: Request) {
         notes: phrases.notes,
         isFavorite: userPhrases.isFavorite,
         isLearned: userPhrases.isLearned,
+        // Include relevance score for debugging/frontend
+        ...(search ? { relevance: rankingExpr } : {}),
       })
       .from(phrases)
       .leftJoin(userPhrases, userPhrasesJoin)
       .where(whereClause)
-      .orderBy(orderBy)
+      .orderBy(...(Array.isArray(orderBy) ? orderBy : [orderBy]))
       .limit(limit)
       .offset(offset),
     db

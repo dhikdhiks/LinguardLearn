@@ -74,6 +74,11 @@ export async function DELETE(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // Admin check - only admins can delete global phrases
+  if (session.user.email !== 'admin@linguardlearn.com') {
+    return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+  }
+
   const { id } = await params;
   await db.delete(phrases).where(eq(phrases.id, id));
   return NextResponse.json({ success: true });

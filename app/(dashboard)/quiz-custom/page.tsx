@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { PlusCircle, Edit, Trash2, Play, Clock, Trophy, ChevronDown, ChevronUp } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Play, Clock, Trophy, ChevronDown, ChevronUp, Link as LinkIcon } from 'lucide-react';
 
 interface QuizSet {
   id: string;
@@ -90,6 +90,16 @@ export default function QuizCustomListPage() {
     }
   };
 
+  const handleShare = async (id: string) => {
+    const url = `${window.location.origin}/quiz-custom/${id}/play`;
+    try {
+      await navigator.clipboard.writeText(url);
+      alert('🔗 Link kuis berhasil disalin! Bagikan ke teman Anda.');
+    } catch (err) {
+      alert('Gagal menyalin link kuis');
+    }
+  };
+
   useEffect(() => {
     fetchSets();
   }, []);
@@ -152,12 +162,20 @@ export default function QuizCustomListPage() {
             Buat kuis sendiri dari kata/kalimat yang kamu pilih. Cocok untuk hafalan targets.
           </p>
         </div>
-        <Link
-          href="/quiz-custom/create"
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm"
-        >
-          <PlusCircle className="w-4 h-4" /> Buat Kuis Baru
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/quiz-custom/browse"
+            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm"
+          >
+            🌐 JELAJAH KUIS PUBLIK
+          </Link>
+          <Link
+            href="/quiz-custom/create"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm"
+          >
+            <PlusCircle className="w-4 h-4" /> Buat Kuis Baru
+          </Link>
+        </div>
       </div>
 
       {sets.length === 0 ? (
@@ -191,6 +209,11 @@ export default function QuizCustomListPage() {
                     <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded-full">
                       {getQuestionTypeLabel(quiz.questionType)}
                     </span>
+                    {quiz.isPublic && (
+                      <span className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-2 py-1 rounded-full">
+                        🌐 Publik
+                      </span>
+                    )}
                   </div>
                   {quiz.description && (
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{quiz.description}</p>
@@ -214,6 +237,13 @@ export default function QuizCustomListPage() {
                   >
                     <Edit className="w-4 h-4" />
                   </Link>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleShare(quiz.id); }}
+                    className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900 rounded transition"
+                    title="Salin link kuis"
+                  >
+                    <LinkIcon className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDelete(quiz.id); }}
                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded transition"

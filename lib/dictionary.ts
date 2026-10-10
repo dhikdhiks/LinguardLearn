@@ -5,7 +5,11 @@
 //   2. Wiktionary REST (cadangan: definisi + jenis kata)
 //   3. MyMemory (terjemahan, jalan paralel)
 // Kegagalan satu sumber tidak mematikan seluruh hasil.
+// Cache layer menggunakan ai_interactions table (TTL 7 hari)
 // ============================================
+
+import { db, aiInteractions } from '@/lib/db';
+import { eq, and, sql } from 'drizzle-orm';
 
 export interface DictBase {
   word: string;
@@ -31,17 +35,20 @@ export interface DictionaryEntry extends DictBase {
   translationMissing?: boolean;
 }
 
+// Cache TTL: 7 days in milliseconds
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
 // ---------- UTIL ----------
 function stripHtml(input: string): string {
   return String(input ?? '')
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
     .replace(/<[^>]*>/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"')
+    .replace(/'/g, "'")
     .replace(/&nbsp;/g, ' ')
     .replace(/\s+([.,;:!?])/g, '$1')
     .replace(/\s+/g, ' ')
@@ -68,6 +75,62 @@ async function withRetry<T>(fn: () => Promise<T | null>, attempts = 2): Promise<
     if (result) return result;
   }
   return null;
+}
+
+// Generate cache key for dictionary lookup
+function getCacheKey(word: string): string {
+  return `dict:${word.toLowerCase().trim()}`;
+}
+
+// Check cache in ai_interactions table
+async function getCachedEntry(word: string): Promise<DictionaryEntry | null> {
+  try {
+    const cacheKey = getCacheKey(word);
+    const rows = await db
+      .select()
+      .from(aiInteractions)
+      .where(
+        and(
+          eq(aiInteractions.prompt, cacheKey),
+          sql`${aiInteractions.createdAt} > NOW() - INTERVAL '7 days'`
+        )
+      )
+      .orderBy(sql`${aiInteractions.createdAt} DESC`)
+      .limit(1);
+
+    if (rows.length > 0) {
+      const cached = JSON.parse(rows[0].response);
+      // Mark as cache hit for analytics
+      await db
+        .update(aiInteractions)
+        .set({ cacheHit: true })
+        .where(eq(aiInteractions.id, rows[0].id));
+      return cached;
+    }
+  } catch (error) {
+    console.error('Cache read error:', error);
+  }
+  return null;
+}
+
+// Store entry in cache
+async function setCachedEntry(word: string, entry: DictionaryEntry): Promise<void> {
+  try {
+    const cacheKey = getCacheKey(word);
+    // Use a system user ID for cache entries (or first admin user)
+    const systemUserId = 'system-cache';
+    
+    await db.insert(aiInteractions).values({
+      userId: systemUserId,
+      prompt: cacheKey,
+      response: JSON.stringify(entry),
+      modelUsed: 'dictionary-cache',
+      tokensUsed: 0,
+      cacheHit: false,
+    });
+  } catch (error) {
+    console.error('Cache write error:', error);
+  }
 }
 
 // ---------- SUMBER 1: dictionaryapi.dev ----------
@@ -212,11 +275,17 @@ async function fetchTranslation(word: string): Promise<string | null> {
 
 // ============================================
 // GABUNGAN: dictionary + wiktionary + terjemahan (semua paralel)
+// Dengan caching via ai_interactions table
 // ============================================
 export async function fetchDictionaryEntry(word: string): Promise<DictionaryEntry | null> {
+  // 1. Check cache first
+  const cached = await getCachedEntry(word);
+  if (cached) {
+    return { ...cached, partial: false }; // cached entries are complete
+  }
+
+  // 2. Fetch from external APIs
   const [dict, wik, translation] = await Promise.all([
-    // Tanpa retry: kalau sumber utama sedang down, jangan tahan hasil 2x.
-    // Fallback Wiktionary/MyMemory yang menangani.
     fetchFreeDictionary(word),
     withRetry(() => fetchWiktionary(word), 2),
     withRetry(() => fetchTranslation(word), 2),
@@ -227,7 +296,7 @@ export async function fetchDictionaryEntry(word: string): Promise<DictionaryEntr
   // Tidak ada sumber kamus sama sekali
   if (!base) {
     if (translation) {
-      return {
+      const entry: DictionaryEntry = {
         word,
         translation,
         partOfSpeech: '',
@@ -244,14 +313,21 @@ export async function fetchDictionaryEntry(word: string): Promise<DictionaryEntr
         plural_form: '',
         partial: true,
       };
+      await setCachedEntry(word, entry);
+      return entry;
     }
     return null;
   }
 
-  return {
+  const entry: DictionaryEntry = {
     ...base,
     translation: translation || '',
     partial: !dict, // hanya Wiktionary → fonetik/bentuk kata kemungkinan kosong
     translationMissing: !translation,
   };
+
+  // 3. Cache the result
+  await setCachedEntry(word, entry);
+
+  return entry;
 }

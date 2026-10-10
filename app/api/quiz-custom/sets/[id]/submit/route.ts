@@ -18,11 +18,16 @@ export async function POST(
   const [set] = await db
     .select()
     .from(quizCustomSets)
-    .where(and(eq(quizCustomSets.id, id), eq(quizCustomSets.userId, session.user.id)))
+    .where(eq(quizCustomSets.id, id))
     .limit(1);
 
   if (!set) {
     return NextResponse.json({ error: 'Kuis tidak ditemukan' }, { status: 404 });
+  }
+
+  // Jika tidak dipublikasikan, hanya pemilik yang bisa mengunggah hasilnya
+  if (!set.isPublic && set.userId !== session.user.id) {
+    return NextResponse.json({ error: 'Kuis ini bersifat pribadi' }, { status: 403 });
   }
 
   try {

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { fetchDictionaryEntry } from '@/lib/dictionary';
+import { withRateLimit, getIpIdentifier, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 
 // ============================================
 // DICTIONARY API (dictionary + terjemahan paralel)
@@ -12,14 +13,19 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Word parameter is required' }, { status: 400 });
   }
 
-  try {
-    const result = await fetchDictionaryEntry(word);
-    if (!result) {
-      return NextResponse.json({ error: `Kata "${word}" tidak ditemukan` }, { status: 404 });
+  // Apply rate limiting
+  const rateLimitedHandler = withRateLimit(RATE_LIMIT_CONFIGS.dictionary, getIpIdentifier);
+
+  return rateLimitedHandler(request, async (req) => {
+    try {
+      const result = await fetchDictionaryEntry(word);
+      if (!result) {
+        return NextResponse.json({ error: `Kata "${word}" tidak ditemukan` }, { status: 404 });
+      }
+      return NextResponse.json(result);
+    } catch (error) {
+      console.error('Dictionary API error:', error);
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
-    return NextResponse.json(result);
-  } catch (error) {
-    console.error('Dictionary API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
+  });
 }

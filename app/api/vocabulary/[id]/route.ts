@@ -89,8 +89,8 @@ export async function PUT(
       word,
       translation,
       definition: definition || null,
-      partOfSpeech: partOfSpeech as any,
-      difficulty: (difficulty as any) || 'beginner',
+      partOfSpeech: partOfSpeech,
+      difficulty: difficulty || 'beginner',
       exampleSentence: exampleSentence || null,
       phonetic: phonetic || null,
       v1: v1 || null,
@@ -144,7 +144,7 @@ export async function PATCH(
 }
 
 // ============================================================
-// DELETE /api/vocabulary/[id] - Hapus kata
+// DELETE /api/vocabulary/[id] - Hapus kata (Admin only)
 // ============================================================
 export async function DELETE(
   req: NextRequest,
@@ -153,6 +153,11 @@ export async function DELETE(
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Admin check - only admins can delete global vocabulary
+  if (session.user.email !== 'admin@linguardlearn.com') {
+    return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
   }
 
   const { id } = await params; // <-- AWAIT params

@@ -33,7 +33,7 @@ export async function addVocabularyToUser(vocabularyId: string) {
     userId: session.user.id,
     vocabularyId: vocabularyId,
     status: 'learning',
-    easeFactor: 2.5,
+    easeFactor: '2.50',
     repetition: 0,
     interval: 0,
     nextReviewAt: new Date(),
@@ -101,12 +101,23 @@ export async function addNewWord(formData: FormData) {
     word,
     translation,
     definition: definition || null,
-    partOfSpeech: partOfSpeech as any,
-    difficulty: (difficulty as any) || 'beginner',
+    partOfSpeech: partOfSpeech,
+    difficulty: difficulty || 'beginner',
     exampleSentence: exampleSentence || null,
     phonetic: phonetic || null,
+    v1: null,
+    v2: null,
+    v3: null,
+    v_ing: null,
+    v_s: null,
+    plural_form: null,
+    synonyms: [],
+    antonyms: [],
+    tags: [],
+    notes: null,
     createdAt: new Date(),
-  });
+    updatedAt: new Date(),
+  } as any);
 
   revalidatePath('/vocabulary');
   revalidatePath('/dashboard');

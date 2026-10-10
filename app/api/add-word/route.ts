@@ -46,8 +46,8 @@ export async function POST(req: NextRequest) {
     word,
     translation,
     definition: definition || null,
-    partOfSpeech: partOfSpeech as any,
-    difficulty: (difficulty as any) || 'beginner',
+    partOfSpeech: partOfSpeech,
+    difficulty: difficulty || 'beginner',
     exampleSentence: exampleSentence || null,
     phonetic: phonetic || null,
     v1: v1 || null,
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     notes: notes || null,
     createdAt: new Date(),
     updatedAt: new Date(),
-  });
+  } as any);
 
   return NextResponse.json({ success: true, word });
 }
