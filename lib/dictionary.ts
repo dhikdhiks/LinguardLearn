@@ -82,12 +82,16 @@ function getCacheKey(word: string): string {
   return `dict:${word.toLowerCase().trim()}`;
 }
 
-// Check cache in ai_interactions table
-async function getCachedEntry(word: string): Promise<DictionaryEntry | null> {
+// ============================================================
+// CACHE GENERIK (disimpan di ai_interactions)
+// Catatan: ai_interactions.user_id punya FOREIGN KEY ke users.id,
+// jadi PENULISAN cache WAJIB memakai user yang benar-benar ada.
+// Tanpa userId, cache dilewati (bukan error) agar tidak nge-block.
+// ============================================================
+export async function getCachedJson<T>(cacheKey: string): Promise<T | null> {
   try {
-    const cacheKey = getCacheKey(word);
     const rows = await db
-      .select()
+      .select({ response: aiInteractions.response })
       .from(aiInteractions)
       .where(
         and(
@@ -99,13 +103,7 @@ async function getCachedEntry(word: string): Promise<DictionaryEntry | null> {
       .limit(1);
 
     if (rows.length > 0) {
-      const cached = JSON.parse(rows[0].response);
-      // Mark as cache hit for analytics
-      await db
-        .update(aiInteractions)
-        .set({ cacheHit: true })
-        .where(eq(aiInteractions.id, rows[0].id));
-      return cached;
+      return JSON.parse(rows[0].response) as T;
     }
   } catch (error) {
     console.error('Cache read error:', error);
@@ -113,24 +111,36 @@ async function getCachedEntry(word: string): Promise<DictionaryEntry | null> {
   return null;
 }
 
-// Store entry in cache
-async function setCachedEntry(word: string, entry: DictionaryEntry): Promise<void> {
+export async function setCachedJson<T>(
+  cacheKey: string,
+  value: T,
+  userId: string | undefined,
+  modelUsed = 'dictionary-cache'
+): Promise<void> {
+  // Tanpa userId yang valid, penulisan akan melanggar foreign key → lewati.
+  if (!userId) return;
   try {
-    const cacheKey = getCacheKey(word);
-    // Use a system user ID for cache entries (or first admin user)
-    const systemUserId = 'system-cache';
-    
     await db.insert(aiInteractions).values({
-      userId: systemUserId,
+      userId,
       prompt: cacheKey,
-      response: JSON.stringify(entry),
-      modelUsed: 'dictionary-cache',
+      response: JSON.stringify(value),
+      modelUsed,
       tokensUsed: 0,
       cacheHit: false,
     });
   } catch (error) {
     console.error('Cache write error:', error);
   }
+}
+
+// Check cache in ai_interactions table
+async function getCachedEntry(word: string): Promise<DictionaryEntry | null> {
+  return getCachedJson<DictionaryEntry>(getCacheKey(word));
+}
+
+// Store entry in cache
+async function setCachedEntry(word: string, entry: DictionaryEntry, userId?: string): Promise<void> {
+  await setCachedJson(getCacheKey(word), entry, userId);
 }
 
 // ---------- SUMBER 1: dictionaryapi.dev ----------
@@ -277,11 +287,15 @@ async function fetchTranslation(word: string): Promise<string | null> {
 // GABUNGAN: dictionary + wiktionary + terjemahan (semua paralel)
 // Dengan caching via ai_interactions table
 // ============================================
-export async function fetchDictionaryEntry(word: string): Promise<DictionaryEntry | null> {
+export async function fetchDictionaryEntry(
+  word: string,
+  userId?: string
+): Promise<DictionaryEntry | null> {
   // 1. Check cache first
   const cached = await getCachedEntry(word);
   if (cached) {
-    return { ...cached, partial: false }; // cached entries are complete
+    // Entri lama bisa saja "partial" — hormati nilai aslinya.
+    return { ...cached, partial: cached.partial ?? false };
   }
 
   // 2. Fetch from external APIs
@@ -313,7 +327,7 @@ export async function fetchDictionaryEntry(word: string): Promise<DictionaryEntr
         plural_form: '',
         partial: true,
       };
-      await setCachedEntry(word, entry);
+      await setCachedEntry(word, entry, userId);
       return entry;
     }
     return null;
@@ -327,7 +341,7 @@ export async function fetchDictionaryEntry(word: string): Promise<DictionaryEntr
   };
 
   // 3. Cache the result
-  await setCachedEntry(word, entry);
+  await setCachedEntry(word, entry, userId);
 
   return entry;
 }

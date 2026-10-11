@@ -39,7 +39,7 @@ export default function LoginForm({ externalError }: { externalError?: string | 
       {(externalError || state.error) && (
         <div
           role="alert"
-          className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg"
+          className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg dark:bg-red-900/30 dark:border-red-800 dark:text-red-200"
         >
           {externalError || state.error}
         </div>
@@ -47,7 +47,7 @@ export default function LoginForm({ externalError }: { externalError?: string | 
 
       <div className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Alamat Email
           </label>
           <input
@@ -56,12 +56,12 @@ export default function LoginForm({ externalError }: { externalError?: string | 
             type="email"
             required
             autoComplete="email"
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:border-white/15 dark:bg-[#26272a] dark:text-white dark:placeholder-gray-500"
             placeholder="contoh@email.com"
           />
         </div>
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Kata Sandi
           </label>
           <input
@@ -70,7 +70,7 @@ export default function LoginForm({ externalError }: { externalError?: string | 
             type="password"
             required
             autoComplete="current-password"
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:border-white/15 dark:bg-[#26272a] dark:text-white dark:placeholder-gray-500"
             placeholder="••••••••"
           />
         </div>

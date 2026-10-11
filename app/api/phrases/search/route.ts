@@ -5,14 +5,7 @@ import { eq, and, or, ilike, sql, desc, asc, inArray, isNull } from 'drizzle-orm
 import { difficultyEnum } from '@/lib/db/schema';
 
 const VALID_DIFFICULTIES = difficultyEnum.enumValues;
-
-/**
- * Sanitize search term for tsquery - remove special characters
- * websearch_to_tsquery handles this automatically (supports quotes, OR, -)
- */
-function sanitizeSearchTerm(term: string): string {
-  return term.trim().replace(/[^\w\s\-']/g, ' ');
-}
+const MAX_LIMIT = 100;
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -21,37 +14,30 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const search = searchParams.get('search') || '';
+  const search = searchParams.get('search')?.trim() || '';
   const difficulty = searchParams.get('difficulty') || '';
   const status = searchParams.get('status') || 'all'; // all, learned, unlearned
   const favorite = searchParams.get('favorite') === 'true';
   const tag = searchParams.get('tag') || '';
-  const limit = parseInt(searchParams.get('limit') || '50', 10);
-  const offset = parseInt(searchParams.get('offset') || '0', 10);
-  const sortBy = searchParams.get('sortBy') || 'relevance'; // Default to relevance
-  const sortOrder = searchParams.get('sortOrder') || 'desc'; // Desc for relevance (highest first)
+  const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50', 10) || 50, 1), MAX_LIMIT);
+  const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10) || 0, 0);
+  const sortBy = searchParams.get('sortBy') || 'relevance';
+  const sortOrder = searchParams.get('sortOrder') || 'desc';
 
   // Build where conditions
   const conditions = [];
 
-  // Build tsquery for full-text search if search term provided
-  let tsquerySql: string | null = null;
+  const likeTerm = `%${search.toLowerCase()}%`;
+  const prefixTerm = `${search.toLowerCase()}%`;
 
   if (search) {
-    const sanitized = sanitizeSearchTerm(search);
-    // Use websearch_to_tsquery for better query parsing (supports quotes, OR, -)
-    tsquerySql = `websearch_to_tsquery('english', ${sanitized.replace(/'/g, "''")})`;
-    const tsquery = sql.raw(tsquerySql);
-
-    // Use full-text search vector if available (migration 0008)
-    // Fallback to ILIKE if search_vector column doesn't exist yet
-    // Using sql.raw for generated column not in schema
+    // Pencarian HANYA di frasa Inggris (phrase) + terjemahannya (translation).
+    // ILIKE = case-insensitive & cocok sebagian kata
+    // (setara toLowerCase().includes() di client).
     conditions.push(
       or(
-        sql`${sql.raw('phrases.search_vector')} @@ ${tsquery}`,
-        ilike(phrases.phrase, `%${search.toLowerCase()}%`),
-        ilike(phrases.translation, `%${search.toLowerCase()}%`),
-        ilike(phrases.notes, `%${search.toLowerCase()}%`)
+        ilike(phrases.phrase, likeTerm),
+        ilike(phrases.translation, likeTerm)
       )
     );
   }
@@ -97,16 +83,21 @@ export async function GET(request: Request) {
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-  // Build ranking expression using PostgreSQL's ts_rank_cd (cover density ranking)
-  // Weight: A=phrase, B=translation, C=notes
-  const rankingExpr = search && tsquerySql
-    ? sql`ts_rank_cd(${sql.raw('phrases.search_vector')}, ${sql.raw(tsquerySql)}, 32)` // 32 = rank normalization by document length
+  // Ranking: exact match > prefix > substring (hanya pada frasa Inggris).
+  const rankingExpr = search
+    ? sql`(
+        CASE
+          WHEN lower(${phrases.phrase}) = lower(${search}) THEN 100
+          WHEN lower(${phrases.phrase}) LIKE ${prefixTerm} THEN 50
+          WHEN lower(${phrases.phrase}) LIKE ${likeTerm} THEN 25
+          ELSE 0
+        END
+      )`
     : sql`0`;
 
   // Order by
   let orderBy;
   if (sortBy === 'relevance' && search) {
-    // Primary: ts_rank_cd relevance (desc), Secondary: phrase length (asc - shorter first), Tertiary: alphabetical
     orderBy = [
       desc(rankingExpr),
       asc(sql`LENGTH(${phrases.phrase})`),
@@ -117,39 +108,32 @@ export async function GET(request: Request) {
     orderBy = sortOrder === 'desc' ? desc(orderByCol) : asc(orderByCol);
   }
 
-  // Execute query
-  const [rows, totalResult] = await Promise.all([
-    db
-      .select({
-        id: phrases.id,
-        phrase: phrases.phrase,
-        translation: phrases.translation,
-        phonetic: phrases.phonetic,
-        difficulty: phrases.difficulty,
-        tags: phrases.tags,
-        notes: phrases.notes,
-        isFavorite: userPhrases.isFavorite,
-        isLearned: userPhrases.isLearned,
-        // Include relevance score for debugging/frontend
-        ...(search ? { relevance: rankingExpr } : {}),
-      })
-      .from(phrases)
-      .leftJoin(userPhrases, userPhrasesJoin)
-      .where(whereClause)
-      .orderBy(...(Array.isArray(orderBy) ? orderBy : [orderBy]))
-      .limit(limit)
-      .offset(offset),
-    db
-      .select({ count: sql`count(*)` })
-      .from(phrases)
-      .leftJoin(userPhrases, userPhrasesJoin)
-      .where(whereClause),
-  ]);
+  // 1 query saja: data + total (window function) → 2x lebih cepat.
+  const rows = await db
+    .select({
+      id: phrases.id,
+      phrase: phrases.phrase,
+      translation: phrases.translation,
+      phonetic: phrases.phonetic,
+      difficulty: phrases.difficulty,
+      tags: phrases.tags,
+      notes: phrases.notes,
+      isFavorite: userPhrases.isFavorite,
+      isLearned: userPhrases.isLearned,
+      total: sql<number>`count(*) over()`,
+      ...(search ? { relevance: rankingExpr } : {}),
+    })
+    .from(phrases)
+    .leftJoin(userPhrases, userPhrasesJoin)
+    .where(whereClause)
+    .orderBy(...(Array.isArray(orderBy) ? orderBy : [orderBy]))
+    .limit(limit)
+    .offset(offset);
 
-  const total = Number(totalResult[0]?.count ?? 0);
+  const total = rows.length > 0 ? Number(rows[0].total ?? 0) : offset;
 
   return NextResponse.json({
-    data: rows.map((r) => ({
+    data: rows.map(({ total: _t, ...r }) => ({
       ...r,
       isFavorite: r.isFavorite ?? false,
       isLearned: r.isLearned ?? false,

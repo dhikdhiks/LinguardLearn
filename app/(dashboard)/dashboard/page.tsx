@@ -48,9 +48,9 @@ export default async function DashboardPage() {
   return (
     <div>
       {/* Welcome */}
-      <div className="mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white shadow-lg">
+      <div className="mb-6 bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 rounded-2xl p-6 text-white shadow-lg glow-antigravity">
         <h1 className="text-2xl font-bold">📊 Dashboard</h1>
-        <p className="text-blue-100">Selamat datang, {session.user.name}!</p>
+        <p className="text-white/85">Selamat datang, {session.user.name}!</p>
       </div>
 
       {/* Vocabulary Progress */}

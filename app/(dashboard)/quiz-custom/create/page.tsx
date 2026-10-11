@@ -80,7 +80,7 @@ export default function QuizCustomCreatePage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setItemSearchDebounced(searchTerm);
-    }, 300);
+    }, 400);
     return () => clearTimeout(timer);
   }, [searchTerm]);
 

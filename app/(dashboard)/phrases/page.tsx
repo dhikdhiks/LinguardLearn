@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Search, X, Volume2, Pencil, Trash2, PlusCircle } from 'lucide-react';
 
 const PAGE_SIZE = 20;
-const DEBOUNCE_MS = 250;
+const DEBOUNCE_MS = 400;
 
 interface Phrase {
   id: string;
@@ -54,20 +54,21 @@ export default function PhrasesPage() {
     if (filterTag) params.set('tag', filterTag);
     if (filterStatus !== 'all') params.set('status', filterStatus);
     params.set('limit', PAGE_SIZE.toString());
-    params.set('sortBy', 'phrase');
-    params.set('sortOrder', 'asc');
+    // Saat mencari: urutkan relevansi (exact/prefix match dulu).
+    params.set('sortBy', debouncedSearchTerm ? 'relevance' : 'phrase');
+    params.set('sortOrder', debouncedSearchTerm ? 'desc' : 'asc');
     return params.toString();
   }, [debouncedSearchTerm, selectedDifficulties, filterTag, filterStatus]);
 
   // Fetch phrases from API with current filters
-  const fetchPhrases = useCallback(async (offset = 0, append = false) => {
+  const fetchPhrases = useCallback(async (offset = 0, append = false, signal?: AbortSignal) => {
     if (!append) setLoading(true);
     else setLoadingMore(true);
 
     try {
       const params = buildQueryParams();
       const url = `/api/phrases/search?${params}&offset=${offset}`;
-      const res = await fetch(url);
+      const res = await fetch(url, signal ? { signal } : undefined);
       const data = await res.json();
 
       if (append) {
@@ -76,17 +77,26 @@ export default function PhrasesPage() {
         setPhrases(data.data);
       }
       setTotalCount(data.total);
-    } catch (error) {
+    } catch (error: any) {
+      // Abort karena filter berubah → request lama dibatalkan, bukan error.
+      if (error?.name === 'AbortError') return;
       console.error('Failed to fetch phrases:', error);
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      // Jangan reset loading kalau request ini sudah dibatalkan
+      // (ada request baru yang sedang berjalan).
+      if (!signal?.aborted) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
     }
   }, [buildQueryParams]);
 
-  // Fetch when filters change
+  // Fetch when filters change; batalkan request lama yang masih berjalan
+  // agar hasil tidak tertukar / diperlambat oleh request usang.
   useEffect(() => {
-    fetchPhrases(0, false);
+    const controller = new AbortController();
+    fetchPhrases(0, false, controller.signal);
+    return () => controller.abort();
   }, [fetchPhrases]);
 
   // Load more (pagination)
@@ -96,10 +106,6 @@ export default function PhrasesPage() {
 
   // Get unique tags from loaded phrases (for filter dropdown)
   const allTags = [...new Set(phrases.flatMap((p) => p.tags || []))];
-
-  if (loading) {
-    return <div className="text-center py-12">⏳ Memuat data...</div>;
-  }
 
   // ============================================================
   // TOGGLE OPTIMISTIK: update UI dulu, PATCH di background.
@@ -187,6 +193,7 @@ export default function PhrasesPage() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">💬 Kalimat Sehari-hari</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm">
             Menampilkan {phrases.length} dari {totalCount} kalimat
+            {loading && <span className="ml-2 opacity-70">⏳ memuat...</span>}
           </p>
         </div>
         <button
@@ -301,13 +308,27 @@ export default function PhrasesPage() {
       </div>
 
       {/* GRID */}
-      {phrases.length === 0 ? (
+      {loading && phrases.length === 0 ? (
+        // Skeleton hanya di area grid → kotak search tetap tampil & fokus terjaga.
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 h-32 animate-pulse"
+            />
+          ))}
+        </div>
+      ) : phrases.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
           <p className="text-gray-500 dark:text-gray-400 text-lg">Tidak ada kalimat yang cocok.</p>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div
+            className={`grid grid-cols-1 md:grid-cols-2 gap-4 transition-opacity ${
+              loading ? 'opacity-60' : 'opacity-100'
+            }`}
+          >
             {phrases.map((p) => (
               <PhraseCard
                 key={p.id}

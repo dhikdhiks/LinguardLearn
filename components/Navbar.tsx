@@ -36,13 +36,13 @@ export default function Navbar({ user }: NavbarProps) {
   useEffect(() => setMounted(true), []);
 
   return (
-    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 shadow-sm">
+    <nav className="bg-white/85 dark:bg-[#131314]/85 backdrop-blur border-b border-gray-200 dark:border-white/10 sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
             <span className="text-2xl">📚</span>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hidden sm:block">
+            <span className="text-xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent hidden sm:block">
               LinguaVault
             </span>
           </Link>

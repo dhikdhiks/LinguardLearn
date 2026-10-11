@@ -38,13 +38,13 @@ export default async function LoginPage({
   const googleEnabled = !!process.env.AUTH_GOOGLE_ID && !!process.env.AUTH_GOOGLE_SECRET;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50/50 dark:from-[#131314] dark:via-[#151517] dark:to-[#18181a] px-4">
+      <div className="max-w-md w-full space-y-8 bg-white dark:bg-[#1c1c1e] p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">Selamat Datang Kembali</h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Selamat Datang Kembali</h2>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             Belum punya akun?{' '}
-            <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+            <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-300 dark:hover:text-blue-200">
               Daftar di sini
             </Link>
           </p>
@@ -77,7 +77,7 @@ export default async function LoginPage({
             >
               <Button
                 type="submit"
-                className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center justify-center gap-3"
+                className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:bg-[#26272a] dark:border-white/15 dark:text-gray-200 dark:hover:bg-[#2d2e31] flex items-center justify-center gap-3"
               >
                 <svg className="w-5 h-5" viewBox="0 0 48 48">
                   <path
@@ -103,10 +103,10 @@ export default async function LoginPage({
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+                <div className="w-full border-t border-gray-300 dark:border-white/10"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">atau</span>
+                <span className="px-2 bg-white dark:bg-[#1c1c1e] text-gray-500 dark:text-gray-400">atau</span>
               </div>
             </div>
           </>

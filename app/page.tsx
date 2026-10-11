@@ -3,16 +3,16 @@ import Link from 'next/link';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-[#131314] dark:via-[#141416] dark:to-[#17171a] flex flex-col items-center justify-center p-6">
       <div className="max-w-4xl text-center space-y-8">
         {/* Logo dan Tagline */}
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
-          <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 bg-clip-text text-transparent">
             LinguaLearn
           </span>
         </h1>
-        <p className="text-xl md:text-2xl text-gray-700 max-w-2xl mx-auto">
-          Kuasai Bahasa Inggris dengan <span className="font-semibold text-blue-600">AI</span> yang beradaptasi dengan gaya belajarmu.
+        <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 max-w-2xl mx-auto">
+          Kuasai Bahasa Inggris dengan <span className="font-semibold text-blue-600 dark:text-blue-300">AI</span> yang beradaptasi dengan gaya belajarmu.
         </p>
 
         {/* CTA Buttons */}

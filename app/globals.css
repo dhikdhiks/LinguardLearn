@@ -4,6 +4,102 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ============================================================
+   GOOGLE ANTIGRAVITY PALETTE
+   Tema warna ala Google Antigravity / Google AI:
+   - Biru Google #4285F4, Merah #EA4335, Kuning #FBBC05, Hijau #34A853
+   - Gradien khas "Gemini": biru → ungu → pink (#4285F4 → #9B72CB → #D96570)
+   Skala warna default Tailwind (blue/indigo/purple/pink/red/green/yellow)
+   di-remap supaya seluruh UI ikut berubah tanpa mengedit tiap komponen.
+   ============================================================ */
+@theme {
+  /* ---- Google Blue ---- */
+  --color-blue-50: #e8f0fe;
+  --color-blue-100: #d2e3fc;
+  --color-blue-200: #aecbfa;
+  --color-blue-300: #8ab4f8;
+  --color-blue-400: #669df6;
+  --color-blue-500: #4285f4;
+  --color-blue-600: #1a73e8;
+  --color-blue-700: #1967d2;
+  --color-blue-800: #185abc;
+  --color-blue-900: #174ea6;
+  --color-blue-950: #0d2e66;
+
+  /* ---- Google Purple (indigo & purple) ---- */
+  --color-indigo-50: #f3effb;
+  --color-indigo-100: #e7dff7;
+  --color-indigo-200: #cfbfef;
+  --color-indigo-300: #b79fe7;
+  --color-indigo-400: #a888dc;
+  --color-indigo-500: #9b72cb;
+  --color-indigo-600: #8560b5;
+  --color-indigo-700: #6d4f96;
+  --color-indigo-800: #563f76;
+  --color-indigo-900: #3f2e57;
+  --color-indigo-950: #271d36;
+
+  --color-purple-50: #f3effb;
+  --color-purple-100: #e7dff7;
+  --color-purple-200: #cfbfef;
+  --color-purple-300: #b79fe7;
+  --color-purple-400: #a888dc;
+  --color-purple-500: #9b72cb;
+  --color-purple-600: #8560b5;
+  --color-purple-700: #6d4f96;
+  --color-purple-800: #563f76;
+  --color-purple-900: #3f2e57;
+  --color-purple-950: #271d36;
+
+  /* ---- Google Pink/Red (pink, fuchsia-solid dari gradien Gemini) ---- */
+  --color-pink-50: #fdeef0;
+  --color-pink-100: #fbdde1;
+  --color-pink-200: #f6bcc3;
+  --color-pink-300: #f19aa5;
+  --color-pink-400: #e97f8b;
+  --color-pink-500: #d96570;
+  --color-pink-600: #c14e59;
+  --color-pink-700: #a03d47;
+  --color-pink-800: #7d2f37;
+  --color-pink-900: #5c2228;
+
+  /* ---- Google Red ---- */
+  --color-red-50: #fce8e6;
+  --color-red-100: #fad2cf;
+  --color-red-200: #f6aea8;
+  --color-red-300: #f28b82;
+  --color-red-400: #ee675c;
+  --color-red-500: #ea4335;
+  --color-red-600: #d93025;
+  --color-red-700: #b3261e;
+  --color-red-800: #8c1d18;
+  --color-red-900: #601410;
+
+  /* ---- Google Green ---- */
+  --color-green-50: #e9f7ee;
+  --color-green-100: #d3efdd;
+  --color-green-200: #a7dfbb;
+  --color-green-300: #7bcf99;
+  --color-green-400: #4fbf77;
+  --color-green-500: #34a853;
+  --color-green-600: #2b8f46;
+  --color-green-700: #227438;
+  --color-green-800: #1a592b;
+  --color-green-900: #123d1e;
+
+  /* ---- Google Yellow ---- */
+  --color-yellow-50: #fff8e1;
+  --color-yellow-100: #fff0bf;
+  --color-yellow-200: #ffe082;
+  --color-yellow-300: #ffd24d;
+  --color-yellow-400: #fbc405;
+  --color-yellow-500: #f9ab00;
+  --color-yellow-600: #e37400;
+  --color-yellow-700: #c05a00;
+  --color-yellow-800: #994700;
+  --color-yellow-900: #6e3300;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -13,6 +109,10 @@
   }
   html {
     @apply font-sans;
+  }
+  ::selection {
+    background-color: var(--color-blue-200);
+    color: var(--color-blue-900);
   }
 }
 
@@ -99,134 +199,120 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* ============================================================
+   LIGHT MODE — Google clean
+   ============================================================ */
 :root {
+  --background: #ffffff;
+  --foreground: #1f1f1f;
 
-  --background: oklch(1 0 0);
+  --card: #ffffff;
+  --card-foreground: #1f1f1f;
 
-  --foreground: oklch(0.145 0 0);
+  --popover: #ffffff;
+  --popover-foreground: #1f1f1f;
 
-  --card: oklch(1 0 0);
+  --primary: #1a73e8;
+  --primary-foreground: #ffffff;
 
-  --card-foreground: oklch(0.145 0 0);
+  --secondary: #f1f3f4;
+  --secondary-foreground: #202124;
 
-  --popover: oklch(1 0 0);
+  --muted: #f1f3f4;
+  --muted-foreground: #5f6368;
 
-  --popover-foreground: oklch(0.145 0 0);
+  --accent: #e8f0fe;
+  --accent-foreground: #174ea6;
 
-  --primary: oklch(0.205 0 0);
+  --destructive: #d93025;
 
-  --primary-foreground: oklch(0.985 0 0);
+  --border: #dadce0;
+  --input: #dadce0;
+  --ring: #1a73e8;
 
-  --secondary: oklch(0.97 0 0);
-
-  --secondary-foreground: oklch(0.205 0 0);
-
-  --muted: oklch(0.97 0 0);
-
-  --muted-foreground: oklch(0.556 0 0);
-
-  --accent: oklch(0.97 0 0);
-
-  --accent-foreground: oklch(0.205 0 0);
-
-  --destructive: oklch(0.577 0.245 27.325);
-
-  --border: oklch(0.922 0 0);
-
-  --input: oklch(0.922 0 0);
-
-  --ring: oklch(0.708 0 0);
-
-  --chart-1: oklch(0.87 0 0);
-
-  --chart-2: oklch(0.556 0 0);
-
-  --chart-3: oklch(0.439 0 0);
-
-  --chart-4: oklch(0.371 0 0);
-
-  --chart-5: oklch(0.269 0 0);
+  --chart-1: #4285f4;
+  --chart-2: #34a853;
+  --chart-3: #f9ab00;
+  --chart-4: #d96570;
+  --chart-5: #9b72cb;
 
   --radius: 0.625rem;
 
-  --sidebar: oklch(0.985 0 0);
-
-  --sidebar-foreground: oklch(0.145 0 0);
-
-  --sidebar-primary: oklch(0.205 0 0);
-
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-
-  --sidebar-accent: oklch(0.97 0 0);
-
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-
-  --sidebar-border: oklch(0.922 0 0);
-
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #f8f9fa;
+  --sidebar-foreground: #1f1f1f;
+  --sidebar-primary: #1a73e8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8f0fe;
+  --sidebar-accent-foreground: #174ea6;
+  --sidebar-border: #dadce0;
+  --sidebar-ring: #1a73e8;
 }
 
+/* ============================================================
+   DARK MODE — Google Antigravity
+   Latar gelap charcoal (#131314) + aksen gradien biru→ungu→pink
+   ============================================================ */
 .dark {
+  --background: #131314;
+  --foreground: #e3e3e3;
 
-  --background: oklch(0.145 0 0);
+  --card: #1c1c1e;
+  --card-foreground: #e3e3e3;
 
-  --foreground: oklch(0.985 0 0);
+  --popover: #1c1c1e;
+  --popover-foreground: #e3e3e3;
 
-  --card: oklch(0.205 0 0);
+  --primary: #8ab4f8;
+  --primary-foreground: #1a1a1b;
 
-  --card-foreground: oklch(0.985 0 0);
+  --secondary: #26272a;
+  --secondary-foreground: #e3e3e3;
 
-  --popover: oklch(0.205 0 0);
+  --muted: #26272a;
+  --muted-foreground: #9aa0a6;
 
-  --popover-foreground: oklch(0.985 0 0);
+  --accent: #26272a;
+  --accent-foreground: #b6bdfd;
 
-  --primary: oklch(0.922 0 0);
+  --destructive: #f28b82;
 
-  --primary-foreground: oklch(0.205 0 0);
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #8ab4f8;
 
-  --secondary: oklch(0.269 0 0);
+  --chart-1: #8ab4f8;
+  --chart-2: #81c995;
+  --chart-3: #fdd663;
+  --chart-4: #f28b82;
+  --chart-5: #d7aefb;
 
-  --secondary-foreground: oklch(0.985 0 0);
+  --sidebar: #181819;
+  --sidebar-foreground: #e3e3e3;
+  --sidebar-primary: #8ab4f8;
+  --sidebar-primary-foreground: #1a1a1b;
+  --sidebar-accent: #26272a;
+  --sidebar-accent-foreground: #b6bdfd;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #8ab4f8;
+}
 
-  --muted: oklch(0.269 0 0);
+/* ============================================================
+   UTILITAS KHAS "ANTIGRAVITY"
+   ============================================================ */
+/* Gradien "Gemini/Antigravity": biru → ungu → pink */
+.text-gradient-google {
+  background: linear-gradient(90deg, #4285f4 0%, #9b72cb 50%, #d96570 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 
-  --muted-foreground: oklch(0.708 0 0);
+.bg-gradient-google {
+  background: linear-gradient(100deg, #4285f4 0%, #9b72cb 45%, #d96570 100%);
+}
 
-  --accent: oklch(0.269 0 0);
-
-  --accent-foreground: oklch(0.985 0 0);
-
-  --destructive: oklch(0.704 0.191 22.216);
-
-  --border: oklch(1 0 0 / 10%);
-
-  --input: oklch(1 0 0 / 15%);
-
-  --ring: oklch(0.556 0 0);
-
-  --chart-1: oklch(0.87 0 0);
-
-  --chart-2: oklch(0.556 0 0);
-
-  --chart-3: oklch(0.439 0 0);
-
-  --chart-4: oklch(0.371 0 0);
-
-  --chart-5: oklch(0.269 0 0);
-
-  --sidebar: oklch(0.205 0 0);
-
-  --sidebar-foreground: oklch(0.985 0 0);
-
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-
-  --sidebar-accent: oklch(0.269 0 0);
-
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-
-  --sidebar-border: oklch(1 0 0 / 10%);
-
-  --sidebar-ring: oklch(0.556 0 0);
+/* Glow halus khas Antigravity untuk elemen hero/kartu utama */
+.glow-antigravity {
+  box-shadow: 0 0 24px rgba(66, 133, 244, 0.25),
+    0 0 48px rgba(155, 114, 203, 0.18);
 }

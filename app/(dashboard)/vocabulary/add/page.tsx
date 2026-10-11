@@ -119,7 +119,8 @@ export default function AddVocabularyPage() {
         {error && <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 rounded-lg text-sm">⚠️ {error}</div>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex gap-2">
-            <input type="text" name="word" required value={form.word} onChange={handleChange} className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="contoh: beautiful" />
+            <input type="text" name="word" required value={form.word} onChange={handleChange} className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="contoh: beautiful"
+              onBlur={() => { if (form.word.trim() && !form.translation.trim()) handleAutoFill(); }} />
             <button type="button" onClick={handleAutoFill} disabled={fetching} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition disabled:opacity-50 flex items-center gap-2">
               {fetching ? '⏳' : <Search className="w-4 h-4" />} {fetching ? 'Memuat...' : 'Cari'}
             </button>
