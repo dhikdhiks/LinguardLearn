@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { PlusCircle, Edit, Trash2, Play, Clock, Trophy, ChevronDown, ChevronUp, Link as LinkIcon } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Play, Clock, Trophy, ChevronDown, ChevronUp, Link as LinkIcon, Upload } from 'lucide-react';
 
 interface QuizSet {
   id: string;
@@ -168,6 +168,12 @@ export default function QuizCustomListPage() {
             className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm"
           >
             🌐 JELAJAH KUIS PUBLIK
+          </Link>
+          <Link
+            href="/quiz-custom/import"
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm"
+          >
+            <Upload className="w-4 h-4" /> Import Soal
           </Link>
           <Link
             href="/quiz-custom/create"
