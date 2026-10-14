@@ -85,6 +85,27 @@ export const vocabulary = pgTable(
 // Not included in schema since it's database-generated
 
 // ============================================
+// TABEL VOCABULARY_FORMS (bentuk kata terkait: verb/noun/adj/adv)
+// ============================================
+export const vocabularyForms = pgTable(
+  'vocabulary_forms',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    vocabularyId: text('vocabulary_id')
+      .notNull()
+      .references(() => vocabulary.id, { onDelete: 'cascade' }),
+    form: text('form').notNull(), // kata bentuknya, mis. "act"
+    partOfSpeech: partOfSpeechEnum('part_of_speech'),
+    translation: text('translation'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    formIdx: index('vocabulary_forms_form_idx').on(table.form),
+    vocabFormsIdx: index('vocabulary_forms_vocab_idx').on(table.vocabularyId),
+  })
+);
+
+// ============================================
 // TABEL USER_VOCABULARY (progres belajar user)
 // ============================================
 export const userVocabulary = pgTable(

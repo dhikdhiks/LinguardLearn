@@ -15,6 +15,13 @@ import {
 const PAGE_SIZE = 20;
 const DEBOUNCE_MS = 400;
 
+interface WordForm {
+  id: string;
+  form: string;
+  partOfSpeech: string | null;
+  translation: string | null;
+}
+
 interface Word {
   id: string;
   word: string;
@@ -36,6 +43,7 @@ interface Word {
   isFavorite: boolean;
   isLearned: boolean;
   tags: string[];
+  forms: WordForm[];
 }
 
 export default function VocabularyPage() {
@@ -549,6 +557,25 @@ const VocabularyCard = memo(function VocabularyCard({
       {word.plural_form && (
         <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
           <span className="font-medium text-gray-500 dark:text-gray-400">Plural:</span> {word.plural_form}
+        </div>
+      )}
+      {word.forms && word.forms.length > 0 && (
+        <div className="mt-3">
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Bentuk kata:</span>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {word.forms.map(f => (
+              <span
+                key={f.id}
+                className="inline-flex items-center gap-1 text-xs bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-1 rounded"
+              >
+                <span className="font-medium">{f.form}</span>
+                {f.partOfSpeech && (
+                  <span className="text-[10px] uppercase opacity-70">({f.partOfSpeech})</span>
+                )}
+                {f.translation && <span className="opacity-80">— {f.translation}</span>}
+              </span>
+            ))}
+          </div>
         </div>
       )}
       <div className="mt-2 flex flex-wrap gap-2 text-xs">

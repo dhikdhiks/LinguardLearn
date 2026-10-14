@@ -66,6 +66,7 @@ export { client };
 export {
   users,
   vocabulary,
+  vocabularyForms,
   userVocabulary,
   userPhrases,
   learningSessions,

@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, vocabulary } from '@/lib/db';
+import { db, vocabulary, vocabularyForms } from '@/lib/db';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
+import { partOfSpeechEnum } from '@/lib/db/schema';
+
+interface WordFormInput {
+  form: string;
+  partOfSpeech?: string;
+  translation?: string;
+}
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -28,6 +35,7 @@ export async function POST(req: NextRequest) {
   const antonymsRaw = formData.get('antonyms') as string;
   const tagsRaw = formData.get('tags') as string; // <-- TAMBAHKAN
   const notes = formData.get('notes') as string;
+  const formsRaw = formData.get('forms') as string; // bentuk kata terkait
 
   if (!word || !translation || !partOfSpeech) {
     return NextResponse.json({ error: 'Word, translation, and part of speech are required' }, { status: 400 });
@@ -41,8 +49,9 @@ export async function POST(req: NextRequest) {
   const synonyms = synonymsRaw ? synonymsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
   const antonyms = antonymsRaw ? antonymsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
   const tags = tagsRaw ? JSON.parse(tagsRaw) : [];
+  const forms: WordFormInput[] = formsRaw ? JSON.parse(formsRaw) : [];
 
-  await db.insert(vocabulary).values({
+  const [inserted] = await db.insert(vocabulary).values({
     word,
     translation,
     definition: definition || null,
@@ -62,7 +71,25 @@ export async function POST(req: NextRequest) {
     notes: notes || null,
     createdAt: new Date(),
     updatedAt: new Date(),
-  } as any);
+  } as any).returning({ id: vocabulary.id });
+
+  // Simpan bentuk kata terkait (verb/noun/adjective/adverb)
+  const validForms = forms.filter(
+    f => f?.form?.trim()
+  );
+  if (validForms.length > 0) {
+    await db.insert(vocabularyForms).values(
+      validForms.map(f => ({
+        vocabularyId: inserted.id,
+        form: f.form.trim(),
+        partOfSpeech:
+          (partOfSpeechEnum.enumValues as readonly string[]).includes(f.partOfSpeech ?? '')
+            ? (f.partOfSpeech as (typeof partOfSpeechEnum.enumValues)[number])
+            : null,
+        translation: f.translation?.trim() || null,
+      }))
+    );
+  }
 
   return NextResponse.json({ success: true, word });
 }

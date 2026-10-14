@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Check, X, Flag, Volume2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Check, X, AlertCircle } from 'lucide-react';
 
 interface QuizQuestion {
   id: string;
@@ -60,19 +60,37 @@ export default function QuizCustomPlayPage() {
   const [currentQuestionStartTime, setCurrentQuestionStartTime] = useState(Date.now());
   const [finished, setFinished] = useState(false);
 
+  // Ref agar auto-next (setTimeout) selalu baca data terbaru
+  // (menghindari stale closure saat finishQuiz membaca answers)
+  const answersRef = useRef<UserAnswer[]>([]);
+  const elapsedRef = useRef(0);
+
   // Timer
   const [elapsedTime, setElapsedTime] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // Auto-next setelah menjawab (feedback ±1.2 detik, lalu lanjut otomatis)
+  const autoNextRef = useRef<NodeJS.Timeout | null>(null);
+
+  const clearAutoNext = useCallback(() => {
+    if (autoNextRef.current) {
+      clearTimeout(autoNextRef.current);
+      autoNextRef.current = null;
+    }
+  }, []);
 
   // Start quiz on mount
   useEffect(() => {
     startQuiz();
     // Timer
     timerRef.current = setInterval(() => {
-      setElapsedTime(prev => prev + 1);
+      setElapsedTime(prev => {
+        elapsedRef.current = prev + 1;
+        return prev + 1;
+      });
     }, 1000);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      clearAutoNext();
     };
   }, []);
 
@@ -143,11 +161,19 @@ export default function QuizCustomPlayPage() {
       timeSpentMs: timeSpent,
     };
 
-    setAnswers(prev => [...prev, newAnswer]);
+    answersRef.current = [...answersRef.current, newAnswer];
+    setAnswers(answersRef.current);
     setShowResult(true);
+
+    // Otomatis lanjut ke soal berikutnya setelah ±1.2 detik
+    clearAutoNext();
+    autoNextRef.current = setTimeout(() => {
+      handleNext();
+    }, 1200);
   };
 
   const handleNext = () => {
+    clearAutoNext();
     if (currentIndex < (quiz?.totalQuestions ?? 0) - 1) {
       setCurrentIndex(prev => prev + 1);
       setUserInput('');
@@ -159,16 +185,6 @@ export default function QuizCustomPlayPage() {
     }
   };
 
-  const handlePrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1);
-      setUserInput('');
-      setSelectedOption(null);
-      setShowResult(false);
-      setCurrentQuestionStartTime(Date.now());
-    }
-  };
-
   const finishQuiz = async () => {
     if (timerRef.current) clearInterval(timerRef.current);
 
@@ -177,8 +193,8 @@ export default function QuizCustomPlayPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          answers,
-          durationSeconds: elapsedTime,
+          answers: answersRef.current,
+          durationSeconds: elapsedRef.current,
           startedAt: quiz?.startedAt,
         }),
       });
@@ -239,6 +255,12 @@ export default function QuizCustomPlayPage() {
   const isMultipleChoice = currentQuestion.isMultipleChoice;
   const isCorrect = showResult ? checkAnswer(isMultipleChoice ? (selectedOption || '') : userInput) : false;
   const progress = ((currentIndex + 1) / quiz.totalQuestions) * 100;
+
+  // Progress indicator: window maksimal 10 nomor (1-10, 11-20, ...)
+  const WINDOW_SIZE = 10;
+  const windowStart = Math.floor(currentIndex / WINDOW_SIZE) * WINDOW_SIZE;
+  const windowEnd = Math.min(windowStart + WINDOW_SIZE, quiz.totalQuestions);
+  const visibleQuestions = quiz.questions.slice(windowStart, windowEnd);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 py-8 px-4">
@@ -399,34 +421,20 @@ export default function QuizCustomPlayPage() {
                       Soal asli: {currentQuestion.sourceText} → {currentQuestion.targetText}
                     </p>
                   )}
-                  <button
-                    onClick={handleNext}
-                    className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition shadow-sm"
-                  >
-                    {currentIndex === quiz.totalQuestions - 1 ? 'Selesai & Lihat Hasil' : 'Soal Berikutnya'}
-                  </button>
+                  <p className="mt-4 text-center text-xs text-gray-400 dark:text-gray-500 animate-pulse">
+                    ⏳ Lanjut ke soal berikutnya secara otomatis...
+                  </p>
                 </div>
               )}
             </div>
           )}
 
-          {/* Navigation for multiple choice when showing result */}
+          {/* Auto-advance notice for multiple choice */}
           {isMultipleChoice && showResult && (
-            <div className="flex justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
-              <button
-                onClick={handlePrev}
-                disabled={currentIndex === 0}
-                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 flex items-center gap-2"
-              >
-                <ChevronLeft className="w-4 h-4" /> Sebelumnya
-              </button>
-              <button
-                onClick={handleNext}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition flex items-center gap-2"
-              >
-                {currentIndex === quiz.totalQuestions - 1 ? 'Selesai & Lihat Hasil' : 'Soal Berikutnya'}
-                <ChevronRight className="w-4 h-4" />
-              </button>
+            <div className="pt-4 border-t border-gray-100 dark:border-gray-700 text-center">
+              <span className="text-xs text-gray-400 dark:text-gray-500 animate-pulse">
+                ⏳ Lanjut ke soal berikutnya secara otomatis...
+              </span>
             </div>
           )}
         </div>
@@ -440,12 +448,13 @@ export default function QuizCustomPlayPage() {
             </span>
           </div>
           <div className="flex gap-1 overflow-x-auto pb-2">
-            {quiz.questions.map((q, i) => {
-              const ans = answers[i];
+            {visibleQuestions.map((q, i) => {
+              const idx = windowStart + i;
+              const ans = answers[idx];
               let color = 'bg-gray-200 dark:bg-gray-700';
               if (ans) {
                 color = ans.isCorrect ? 'bg-green-500' : 'bg-red-500';
-              } else if (i === currentIndex) {
+              } else if (idx === currentIndex) {
                 color = 'bg-blue-500';
               }
               return (
@@ -453,11 +462,16 @@ export default function QuizCustomPlayPage() {
                   key={q.id}
                   className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white transition-all ${color}`}
                 >
-                  {ans ? (ans.isCorrect ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />) : (i + 1)}
+                  {ans ? (ans.isCorrect ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />) : (idx + 1)}
                 </div>
               );
             })}
           </div>
+          {quiz.totalQuestions > WINDOW_SIZE && (
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+              Menampilkan soal {windowStart + 1}-{windowEnd} dari {quiz.totalQuestions}
+            </p>
+          )}
         </div>
       </div>
     </div>

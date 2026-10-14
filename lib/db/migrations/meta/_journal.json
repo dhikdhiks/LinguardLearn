@@ -57,6 +57,13 @@
       "when": 1791517163136,
       "tag": "0006_perf_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791909666455,
+      "tag": "0008_milky_plazm",
+      "breakpoints": true
     }
   ]
 }

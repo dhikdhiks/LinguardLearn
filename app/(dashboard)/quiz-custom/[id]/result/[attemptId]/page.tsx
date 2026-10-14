@@ -36,6 +36,8 @@ export default function QuizCustomResultPage() {
   const [attempt, setAttempt] = useState<AttemptDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Review: default hanya tampilkan jawaban salah
+  const [showOnlyWrong, setShowOnlyWrong] = useState(true);
 
   useEffect(() => {
     loadResult();
@@ -187,12 +189,40 @@ export default function QuizCustomResultPage() {
 
         {/* DETAILED ANSWERS */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-          <div className="p-6 border-b border-gray-100 dark:border-gray-700">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Detail Jawaban</h2>
+          <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-4 flex-wrap">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              Detail Jawaban
+              {showOnlyWrong && attempt.wrongAnswers > 0 && (
+                <span className="ml-2 text-sm font-normal text-red-500">
+                  ({attempt.answers.filter(a => !a.isCorrect).length} salah)
+                </span>
+              )}
+            </h2>
+            <button
+              onClick={() => setShowOnlyWrong(prev => !prev)}
+              className="px-3 py-1.5 text-sm rounded-lg font-medium transition bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
+            >
+              {showOnlyWrong ? '👁️ Tampilkan semua' : '❌ Hanya yang salah'}
+            </button>
           </div>
 
-          <div className="divide-y divide-gray-100 dark:divide-gray-700">
-            {attempt.answers.map((answer, index) => (
+          {!showOnlyWrong && attempt.answers.length === 0 ? (
+            <p className="p-6 text-gray-500 dark:text-gray-400 text-sm">Tidak ada detail jawaban.</p>
+          ) : showOnlyWrong && attempt.answers.length > 0 && attempt.answers.every(a => a.isCorrect) ? (
+            <div className="p-12 text-center">
+              <p className="text-2xl mb-2">🎉</p>
+              <p className="text-lg font-semibold text-green-600 dark:text-green-400">
+                Semua jawaban benar!
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Tidak ada yang perlu direview.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100 dark:divide-gray-700">
+              {attempt.answers
+                .filter(a => !showOnlyWrong || !a.isCorrect)
+                .map((answer, index) => (
               <div key={answer.itemId} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <div className="flex-1 min-w-0">
@@ -238,8 +268,9 @@ export default function QuizCustomResultPage() {
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+                ))}
+            </div>
+          )}
         </div>
 
         {/* ACTION BUTTONS */}

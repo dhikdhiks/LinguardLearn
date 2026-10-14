@@ -2,13 +2,33 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Search, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, Search, Save, Loader2, Plus, X } from 'lucide-react';
+
+interface WordFormInput {
+  form: string;
+  partOfSpeech: string;
+  translation: string;
+}
+
+const PARTS_OF_SPEECH = [
+  'noun',
+  'verb',
+  'adjective',
+  'adverb',
+  'pronoun',
+  'preposition',
+  'conjunction',
+  'interjection',
+];
+
+const emptyForm = (): WordFormInput => ({ form: '', partOfSpeech: '', translation: '' });
 
 export default function AddVocabularyPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState('');
+  const [forms, setForms] = useState<WordFormInput[]>([]);
   const [form, setForm] = useState({
     word: '',
     translation: '',
@@ -31,6 +51,15 @@ export default function AddVocabularyPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  // === Bentuk kata terkait (verb/noun/adjective/adverb) ===
+  const addFormRow = () => setForms(prev => [...prev, emptyForm()]);
+  const updateFormRow = (index: number, field: keyof WordFormInput, value: string) => {
+    setForms(prev => prev.map((f, i) => (i === index ? { ...f, [field]: value } : f)));
+  };
+  const removeFormRow = (index: number) => {
+    setForms(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleAutoFill = async () => {
@@ -92,6 +121,9 @@ export default function AddVocabularyPage() {
         formData.append(key, value);
       }
     });
+    // Bentuk kata terkait (hanya yang terisi kata nya)
+    const validForms = forms.filter(f => f.form.trim());
+    formData.append('forms', JSON.stringify(validForms));
 
     try {
       const res = await fetch('/api/add-word', { method: 'POST', body: formData });
@@ -153,6 +185,65 @@ export default function AddVocabularyPage() {
               </div>
             </div>
           )}
+
+          {/* BENTUK KATA TERKAIT (verb/noun/adjective/adverb) */}
+          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">🔗 Bentuk Kata Terkait</p>
+              <button
+                type="button"
+                onClick={addFormRow}
+                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium"
+              >
+                <Plus className="w-4 h-4" /> Tambah Bentuk
+              </button>
+            </div>
+            {forms.length === 0 ? (
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                Belum ada bentuk kata. Contoh: action (noun) → act (verb), active (adjective), actively (adverb).
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {forms.map((f, i) => (
+                  <div key={i} className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                    <input
+                      type="text"
+                      value={f.form}
+                      onChange={e => updateFormRow(i, 'form', e.target.value)}
+                      placeholder="kata bentuk (mis. act)"
+                      className="flex-1 px-2 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded text-sm"
+                    />
+                    <select
+                      value={f.partOfSpeech}
+                      onChange={e => updateFormRow(i, 'partOfSpeech', e.target.value)}
+                      className="px-2 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded text-sm"
+                    >
+                      <option value="">Jenis...</option>
+                      {PARTS_OF_SPEECH.map(p => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      value={f.translation}
+                      onChange={e => updateFormRow(i, 'translation', e.target.value)}
+                      placeholder="terjemahan"
+                      className="flex-1 px-2 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeFormRow(i)}
+                      className="p-1.5 text-gray-400 hover:text-red-500 transition self-end sm:self-center"
+                      title="Hapus bentuk"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Sinonim</label><input type="text" name="synonyms" value={form.synonyms} onChange={handleChange} className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="pisah koma" /></div>
             <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Antonim</label><input type="text" name="antonyms" value={form.antonyms} onChange={handleChange} className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="pisah koma" /></div>

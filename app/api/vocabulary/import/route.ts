@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, vocabulary } from '@/lib/db';
+import { db, vocabulary, vocabularyForms } from '@/lib/db';
 import { auth } from '@/lib/auth';
+import { partOfSpeechEnum } from '@/lib/db/schema';
 
 const CHUNK_SIZE = 500;
 const POS = new Set([
@@ -16,6 +17,17 @@ const POS = new Set([
 const DIFF = new Set(['beginner', 'intermediate', 'advanced']);
 
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+
+const normalizeForms = (raw: unknown) => {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((f: any) => f && typeof f.form === 'string' && f.form.trim())
+    .map((f: any) => ({
+      form: f.form.trim(),
+      partOfSpeech: POS.has(f.partOfSpeech) ? f.partOfSpeech : null,
+      translation: str(f.translation) || null,
+    }));
+};
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -37,6 +49,7 @@ export async function POST(req: NextRequest) {
   // Normalisasi + dedupe di memori
   const seen = new Set<string>();
   const rows: Array<Record<string, unknown>> = [];
+  const formsByWord = new Map<string, Array<{ form: string; partOfSpeech: string | null; translation: string | null }>>();
   let skipped = 0;
 
   for (const item of data) {
@@ -51,6 +64,11 @@ export async function POST(req: NextRequest) {
       continue;
     }
     seen.add(word);
+
+    const forms = normalizeForms(item?.forms);
+    if (forms.length > 0) {
+      formsByWord.set(word, forms);
+    }
 
     rows.push({
       word,
@@ -83,8 +101,32 @@ export async function POST(req: NextRequest) {
       .insert(vocabulary)
       .values(chunk as any)
       .onConflictDoNothing({ target: vocabulary.word })
-      .returning({ id: vocabulary.id });
+      .returning({ id: vocabulary.id, word: vocabulary.word });
     imported += inserted.length;
+
+    // Simpan bentuk kata terkait untuk kata yang baru diinsert
+    const idByWord = new Map(inserted.map(r => [r.word, r.id]));
+    const formRows: Array<{
+      vocabularyId: string;
+      form: string;
+      partOfSpeech: (typeof partOfSpeechEnum.enumValues)[number] | null;
+      translation: string | null;
+    }> = [];
+    for (const [word, id] of idByWord) {
+      const forms = formsByWord.get(word);
+      if (!forms) continue;
+      for (const f of forms) {
+        formRows.push({
+          vocabularyId: id,
+          form: f.form,
+          partOfSpeech: f.partOfSpeech as (typeof partOfSpeechEnum.enumValues)[number] | null,
+          translation: f.translation,
+        });
+      }
+    }
+    if (formRows.length > 0) {
+      await db.insert(vocabularyForms).values(formRows);
+    }
   }
 
   return NextResponse.json({ success: true, imported, skipped });

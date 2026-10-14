@@ -1,12 +1,19 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { db, vocabulary, userVocabulary } from '@/lib/db';
+import { db, vocabulary, userVocabulary, vocabularyForms } from '@/lib/db';
 import { eq, and, or, ilike, sql, desc, asc, inArray, isNull } from 'drizzle-orm';
 import { partOfSpeechEnum, difficultyEnum } from '@/lib/db/schema';
 
 const VALID_PARTS_OF_SPEECH = partOfSpeechEnum.enumValues;
 const VALID_DIFFICULTIES = difficultyEnum.enumValues;
 const MAX_LIMIT = 100;
+
+interface WordFormRow {
+  id: string;
+  form: string;
+  partOfSpeech: string | null;
+  translation: string | null;
+}
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -33,13 +40,15 @@ export async function GET(request: Request) {
   const prefixTerm = `${search.toLowerCase()}%`;
 
   if (search) {
-    // Pencarian HANYA di kata Inggris (word) + terjemahannya (translation).
-    // ILIKE = case-insensitive & cocok sebagian kata
-    // (setara toLowerCase().includes() di client).
+    // Pencarian di kata Inggris (word), terjemahannya (translation),
+    // DAN bentuk kata terkait (vocabulary_forms.form) — mis. cari "act"
+    // menemukan "action" lewat bentuk verb-nya.
+    // EXISTS (bukan JOIN) agar tidak menduplikasi row.
     conditions.push(
       or(
         ilike(vocabulary.word, likeTerm),
-        ilike(vocabulary.translation, likeTerm)
+        ilike(vocabulary.translation, likeTerm),
+        sql`EXISTS (SELECT 1 FROM vocabulary_forms vf WHERE vf.vocabulary_id = ${vocabulary.id} AND lower(vf.form) LIKE ${likeTerm})`
       )
     );
   }
@@ -97,12 +106,16 @@ export async function GET(request: Request) {
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
   // Ranking: exact match > prefix > substring (hanya pada kata Inggris).
+  // Match di bentuk kata (vocabulary_forms) mendapat skor lebih rendah.
   const rankingExpr = search
     ? sql`(
         CASE
           WHEN lower(${vocabulary.word}) = lower(${search}) THEN 100
           WHEN lower(${vocabulary.word}) LIKE ${prefixTerm} THEN 50
           WHEN lower(${vocabulary.word}) LIKE ${likeTerm} THEN 25
+          WHEN EXISTS (SELECT 1 FROM vocabulary_forms vf WHERE vf.vocabulary_id = ${vocabulary.id} AND lower(vf.form) = lower(${search})) THEN 15
+          WHEN EXISTS (SELECT 1 FROM vocabulary_forms vf WHERE vf.vocabulary_id = ${vocabulary.id} AND lower(vf.form) LIKE ${prefixTerm}) THEN 10
+          WHEN EXISTS (SELECT 1 FROM vocabulary_forms vf WHERE vf.vocabulary_id = ${vocabulary.id} AND lower(vf.form) LIKE ${likeTerm}) THEN 5
           ELSE 0
         END
       )`
@@ -157,11 +170,34 @@ export async function GET(request: Request) {
 
   const total = rows.length > 0 ? Number(rows[0].total ?? 0) : offset;
 
+  // Ambil bentuk kata terkait untuk semua row hasil (1 query tambahan, ter-index)
+  const vocabIds = rows.map(r => r.id);
+  const formsByVocab = new Map<string, WordFormRow[]>();
+  if (vocabIds.length > 0) {
+    const formRows = await db
+      .select({
+        vocabularyId: vocabularyForms.vocabularyId,
+        id: vocabularyForms.id,
+        form: vocabularyForms.form,
+        partOfSpeech: vocabularyForms.partOfSpeech,
+        translation: vocabularyForms.translation,
+      })
+      .from(vocabularyForms)
+      .where(inArray(vocabularyForms.vocabularyId, vocabIds))
+      .orderBy(vocabularyForms.createdAt);
+    for (const fr of formRows) {
+      const list = formsByVocab.get(fr.vocabularyId) ?? [];
+      list.push({ id: fr.id, form: fr.form, partOfSpeech: fr.partOfSpeech, translation: fr.translation });
+      formsByVocab.set(fr.vocabularyId, list);
+    }
+  }
+
   return NextResponse.json({
     data: rows.map(({ total: _t, ...r }) => ({
       ...r,
       isFavorite: r.isFavorite ?? false,
       isLearned: r.isLearned ?? false,
+      forms: formsByVocab.get(r.id) ?? [],
     })),
     total,
     limit,
