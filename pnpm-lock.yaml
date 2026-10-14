@@ -20,6 +20,9 @@ importers:
       '@heroui/styles':
         specifier: ^3.2.6
         version: 3.2.6(tailwind-merge@3.7.0)(tailwindcss@4.3.3)
+      '@tsparticles/engine':
+        specifier: ^4.4.0
+        version: 4.4.0
       '@tsparticles/react':
         specifier: ^4.4.0
         version: 4.4.0(@tsparticles/engine@4.4.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)

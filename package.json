@@ -20,6 +20,7 @@
     "@base-ui/react": "^1.6.0",
     "@heroui/react": "^3.2.6",
     "@heroui/styles": "^3.2.6",
+    "@tsparticles/engine": "^4.4.0",
     "@tsparticles/react": "^4.4.0",
     "@tsparticles/slim": "^4.4.0",
     "bcryptjs": "^3.0.3",
@@ -56,10 +57,5 @@
   "engines": {
     "node": ">=20.x"
   },
-  "packageManager": "pnpm@11.10.0",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@tsparticles/engine"
-    ]
-  }
+  "packageManager": "pnpm@11.10.0"
 }
