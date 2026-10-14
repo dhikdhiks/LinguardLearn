@@ -57,10 +57,9 @@
     "node": ">=20.x"
   },
   "packageManager": "pnpm@11.10.0",
-  "allowScripts": {
-    "esbuild@0.28.2": true,
-    "esbuild@0.18.20": true,
-    "esbuild@0.25.12": true,
-    "@tsparticles/engine@4.4.0": true
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@tsparticles/engine"
+    ]
   }
 }

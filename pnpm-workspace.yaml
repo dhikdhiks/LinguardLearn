@@ -1,7 +1,9 @@
-# Config pnpm 11 (bukan monorepo lagi — tidak ada `packages:`).
-# Hanya untuk mengizinkan postinstall dependency yang dibutuhkan:
-#   - esbuild  → tsx, drizzle-kit
-#   - sharp    → optimasi gambar next/image
+# pnpm 11 config (this is no longer a monorepo — no `packages:` field).
+# Used only to allow the required dependency postinstall scripts:
+#   - esbuild             -> tsx, drizzle-kit
+#   - sharp               -> next/image optimization
+#   - @tsparticles/engine -> star/constellation particle background
 allowBuilds:
   esbuild: true
   sharp: true
+  '@tsparticles/engine': true
