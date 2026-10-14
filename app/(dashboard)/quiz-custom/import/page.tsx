@@ -57,7 +57,7 @@ export default function ImportQuizPage() {
     });
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.error || 'Gagal import');
+      throw new Error(data.error || 'Import failed');
     }
     return data;
   };
@@ -73,7 +73,7 @@ export default function ImportQuizPage() {
       const data = await runImport({ mode: 'text', words });
       setResult(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Terjadi kesalahan saat import');
+      setError(e instanceof Error ? e.message : 'An error occurred during import');
     } finally {
       setLoading(false);
     }
@@ -89,7 +89,7 @@ export default function ImportQuizPage() {
       const data = await runImport({ mode: 'database', pos });
       setResult(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Terjadi kesalahan saat import');
+      setError(e instanceof Error ? e.message : 'An error occurred during import');
     } finally {
       setDbLoading(false);
     }
@@ -101,29 +101,29 @@ export default function ImportQuizPage() {
         onClick={() => router.push('/quiz-custom')}
         className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4"
       >
-        <ArrowLeft className="w-4 h-4" /> Kembali ke Kuis
+        <ArrowLeft className="w-4 h-4" /> Back to Quizzes
       </button>
 
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          📥 Import Soal
+          📥 Import Questions
         </h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Impor soal kuis dari kata bahasa Inggris apa saja — semua jenis kata
-          diterima (verb, noun, adjective, dst.). Setiap import otomatis membuat
-          kuis baru.
+          Import quiz questions from any English words — all parts of speech
+          are accepted (verb, noun, adjective, etc.). Each import automatically
+          creates a new quiz.
         </p>
 
-        {/* Nama kuis (opsional) */}
+        {/* Quiz name (optional) */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Nama Kuis (opsional)
+            Quiz Name (optional)
           </label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Contoh: Verb Mingguan"
+            placeholder="e.g. Weekly Verbs"
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
           />
         </div>
@@ -131,7 +131,7 @@ export default function ImportQuizPage() {
         {/* ===== IMPORT DARI TEKS ===== */}
         <div>
           <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            1. Import dari Teks
+            1. Import from Text
           </h2>
           <textarea
             value={text}
@@ -141,8 +141,8 @@ export default function ImportQuizPage() {
             placeholder="run&#10;apple&#10;quickly&#10;beautiful"
           />
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Satu kata per baris. Kata yang belum ada di kamus akan diambil otomatis
-            dari dictionary.
+            One word per line. Words not yet in your dictionary will be
+            fetched automatically from the dictionary API.
           </p>
           <button
             onClick={handleImportText}
@@ -150,7 +150,7 @@ export default function ImportQuizPage() {
             className="mt-3 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition w-full"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-            {loading ? 'Memproses...' : 'Import & Buat Kuis'}
+            {loading ? 'Processing...' : 'Import & Create Quiz'}
           </button>
         </div>
 
@@ -159,12 +159,12 @@ export default function ImportQuizPage() {
         {/* ===== IMPORT DARI KAMUS ===== */}
         <div>
           <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            2. Ambil dari Kamus
+            2. Fetch from Dictionary
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {totalCount !== null
-              ? `Ada ${totalCount} kata di kamus kamu (${verbCount ?? '-'} di antaranya verb).`
-              : 'Ambil kata-kata yang sudah tersimpan di kamus.'}
+              ? `There are ${totalCount} words in your dictionary (${verbCount ?? '-'} of them verbs).`
+              : 'Fetch words already stored in your dictionary.'}
           </p>
           <div className="grid grid-cols-2 gap-3 mt-3">
             <button
@@ -173,7 +173,7 @@ export default function ImportQuizPage() {
               className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition"
             >
               {dbLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
-              Semua Verb{verbCount !== null ? ` (${verbCount})` : ''}
+              All Verbs{verbCount !== null ? ` (${verbCount})` : ''}
             </button>
             <button
               onClick={() => handleImportAll('all')}
@@ -181,7 +181,7 @@ export default function ImportQuizPage() {
               className="flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition"
             >
               {dbLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
-              Semua Kata{totalCount !== null ? ` (${totalCount})` : ''}
+              All Words{totalCount !== null ? ` (${totalCount})` : ''}
             </button>
           </div>
         </div>
@@ -198,21 +198,21 @@ export default function ImportQuizPage() {
         {result && (
           <div className="mt-6 p-4 rounded-lg border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-900/20">
             <p className="font-medium text-gray-900 dark:text-white">
-              ✅ Kuis “{result.name}” dibuat — {result.imported} soal
+              ✅ Quiz "{result.name}" created — {result.imported} questions
             </p>
             <div className="mt-3">
               <button
                 onClick={() => router.push(`/quiz-custom/${result.setId}/play`)}
                 className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
               >
-                <ExternalLink className="w-4 h-4" /> Mainkan Kuis
+                <ExternalLink className="w-4 h-4" /> Play Quiz
               </button>
             </div>
 
             {result.skipped.length > 0 && (
               <div className="mt-4">
                 <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
-                  ⚠️ Dilewati: {result.skipped.length}
+                  ⚠️ Skipped: {result.skipped.length}
                 </p>
                 <ul className="text-sm text-yellow-600 dark:text-yellow-500 list-disc ml-5 max-h-40 overflow-y-auto">
                   {result.skipped.map((s, i) => (
@@ -225,7 +225,7 @@ export default function ImportQuizPage() {
             {result.failed.length > 0 && (
               <div className="mt-4">
                 <p className="text-sm font-medium text-red-700 dark:text-red-400">
-                  ❌ Gagal: {result.failed.length}
+                  ❌ Failed: {result.failed.length}
                 </p>
                 <ul className="text-sm text-red-600 dark:text-red-500 list-disc ml-5 max-h-40 overflow-y-auto">
                   {result.failed.map((f, i) => (

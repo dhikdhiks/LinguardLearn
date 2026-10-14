@@ -166,7 +166,7 @@ export default function PhrasesPage() {
   };
 
   const handleDelete = async (id: string, phrase: string) => {
-    if (!confirm(`Hapus kalimat "${phrase}" dari daftar?`)) return;
+    if (!confirm(`Delete the phrase "${phrase}"?`)) return;
     await fetch(`/api/phrases/${id}`, { method: 'DELETE' });
     fetchPhrases(0, false);
   };
@@ -190,17 +190,17 @@ export default function PhrasesPage() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">💬 Kalimat Sehari-hari</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">💬 Everyday Phrases</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm">
-            Menampilkan {phrases.length} dari {totalCount} kalimat
-            {loading && <span className="ml-2 opacity-70">⏳ memuat...</span>}
+            Showing {phrases.length} of {totalCount} phrases
+            {loading && <span className="ml-2 opacity-70">loading...</span>}
           </p>
         </div>
         <button
           onClick={() => router.push('/phrases/add')}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm"
         >
-          <PlusCircle className="w-4 h-4" /> Tambah Kalimat
+          <PlusCircle className="w-4 h-4" /> Add Phrase
         </button>
       </div>
 
@@ -211,7 +211,7 @@ export default function PhrasesPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Cari kalimat atau terjemahan..."
+              placeholder="Search phrases or translations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
@@ -261,7 +261,7 @@ export default function PhrasesPage() {
                     : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                 }`}
               >
-                Semua
+                All
               </button>
               <button
                 onClick={() => setFilterStatus('unlearned')}
@@ -271,7 +271,7 @@ export default function PhrasesPage() {
                     : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                 }`}
               >
-                📖 Belum
+                📖 Not mastered
               </button>
               <button
                 onClick={() => setFilterStatus('learned')}
@@ -281,7 +281,7 @@ export default function PhrasesPage() {
                     : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                 }`}
               >
-                ✅ Sudah
+                ✅ Mastered
               </button>
             </div>
 
@@ -294,7 +294,7 @@ export default function PhrasesPage() {
                   onChange={(e) => setFilterTag(e.target.value)}
                   className="px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 >
-                  <option value="">Semua</option>
+                  <option value="">All</option>
                   {allTags.map((tag) => (
                     <option key={tag} value={tag}>
                       {tag}
@@ -320,7 +320,7 @@ export default function PhrasesPage() {
         </div>
       ) : phrases.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
-          <p className="text-gray-500 dark:text-gray-400 text-lg">Tidak ada kalimat yang cocok.</p>
+          <p className="text-gray-500 dark:text-gray-400 text-lg">No matching phrases.</p>
         </div>
       ) : (
         <>
@@ -351,7 +351,7 @@ export default function PhrasesPage() {
                 disabled={loadingMore}
                 className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition shadow-sm"
               >
-                {loadingMore ? 'Memuat...' : `Muat Lebih Banyak (${totalCount - phrases.length} kalimat lagi)`}
+                {loadingMore ? 'Loading...' : `Load More (${totalCount - phrases.length} more phrases)`}
               </button>
             </div>
           )}
@@ -395,7 +395,7 @@ const PhraseCard = memo(function PhraseCard({
             <button
               onClick={() => onSpeak(phrase.phrase)}
               className="p-1 text-gray-400 hover:text-blue-600 transition rounded-full hover:bg-blue-50 dark:hover:bg-blue-900"
-              title="Dengar"
+              title="Hear"
             >
               <Volume2 className="w-4 h-4" />
             </button>
@@ -423,7 +423,7 @@ const PhraseCard = memo(function PhraseCard({
             className={`p-1.5 text-gray-400 hover:text-yellow-500 transition ${
               favoriting.has(phrase.id) ? 'opacity-40 cursor-wait' : ''
             }`}
-            title={phrase.isFavorite ? 'Hapus favorit' : 'Tambah favorit'}
+            title={phrase.isFavorite ? 'Remove favorite' : 'Add favorite'}
           >
             {phrase.isFavorite ? '⭐' : '☆'}
           </button>
@@ -437,7 +437,7 @@ const PhraseCard = memo(function PhraseCard({
                 ? 'text-green-500'
                 : 'text-gray-400 hover:text-green-500'
             }`}
-            title={phrase.isLearned ? 'Tandai belum hafal' : 'Tandai sudah hafal'}
+            title={phrase.isLearned ? 'Mark as not mastered' : 'Mark as mastered'}
           >
             {phrase.isLearned ? '✅' : '📖'}
           </button>
@@ -451,7 +451,7 @@ const PhraseCard = memo(function PhraseCard({
           <button
             onClick={() => onDelete(phrase.id, phrase.phrase)}
             className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded transition"
-            title="Hapus"
+            title="Delete"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -461,7 +461,7 @@ const PhraseCard = memo(function PhraseCard({
       {/* Isi */}
       <div className="mt-3">
         <p className="text-gray-700 dark:text-gray-300">
-          <span className="font-medium text-gray-500 dark:text-gray-400">Arti:</span> {phrase.translation}
+          <span className="font-medium text-gray-500 dark:text-gray-400">Meaning:</span> {phrase.translation}
         </p>
         {phrase.notes && (
           <div className="mt-2 text-xs text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-2">

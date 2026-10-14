@@ -25,7 +25,7 @@ export async function addVocabularyToUser(vocabularyId: string) {
     .limit(1);
 
   if (existing.length > 0) {
-    return { success: false, message: 'Kata sudah ada di daftar belajar Anda.' };
+    return { success: false, message: 'Word is already in your study list.' };
   }
 
   // Tambahkan
@@ -43,7 +43,7 @@ export async function addVocabularyToUser(vocabularyId: string) {
 
   revalidatePath('/dashboard');
   revalidatePath('/learn');
-  return { success: true, message: 'Kata berhasil ditambahkan!' };
+  return { success: true, message: 'Word added successfully!' };
 }
 
 // ============================================================
@@ -64,7 +64,7 @@ export async function removeVocabularyFromUser(vocabularyId: string) {
 
   revalidatePath('/dashboard');
   revalidatePath('/learn');
-  return { success: true, message: 'Kata dihapus dari daftar belajar.' };
+  return { success: true, message: 'Word removed from your study list.' };
 }
 
 // ============================================================
@@ -94,7 +94,7 @@ export async function addNewWord(formData: FormData) {
     .limit(1);
 
   if (existing.length > 0) {
-    throw new Error(`Kata "${word}" sudah ada di kamus!`);
+    throw new Error(`Word "${word}" is already in your dictionary!`);
   }
 
   await db.insert(vocabulary).values({

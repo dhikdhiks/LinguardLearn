@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
   const existing = await db.select().from(vocabulary).where(eq(vocabulary.word, word)).limit(1);
   if (existing.length > 0) {
-    return NextResponse.json({ error: `Kata "${word}" sudah ada di kamus!` }, { status: 400 });
+    return NextResponse.json({ error: `Word "${word}" is already in your dictionary!` }, { status: 400 });
   }
 
   const synonyms = synonymsRaw ? synonymsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];

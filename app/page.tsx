@@ -1,50 +1,63 @@
-import { Button } from '@/components/ui/button';
+'use client';
+
+import { Button, Card, Chip } from '@heroui/react';
+import { Brain, BookOpen, MessageSquare, Sparkles, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-[#131314] dark:via-[#141416] dark:to-[#17171a] flex flex-col items-center justify-center p-6">
-      <div className="max-w-4xl text-center space-y-8">
-        {/* Logo dan Tagline */}
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
-          <span className="bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-            LinguaLearn
-          </span>
-        </h1>
-        <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 max-w-2xl mx-auto">
-          Kuasai Bahasa Inggris dengan <span className="font-semibold text-blue-600 dark:text-blue-300">AI</span> yang beradaptasi dengan gaya belajarmu.
-        </p>
+    <div className="flex min-h-screen flex-col items-center justify-center p-6">
+      <div className="max-w-4xl space-y-8 text-center">
+        {/* Logo & Tagline */}
+        <div className="space-y-4">
+          <Chip size="lg" variant="soft" color="accent" className="mb-2">
+            <Chip.Label className="flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" />
+              English Vocabulary &amp; Quiz Learning
+            </Chip.Label>
+          </Chip>
+          <h1 className="text-5xl font-bold tracking-tight md:text-7xl">
+            <span className="bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+              LinguaLearn
+            </span>
+          </h1>
+          <p className="mx-auto max-w-2xl text-xl text-muted-foreground md:text-2xl">
+            Master English vocabulary at your own pace — with smart quizzes,
+            spaced repetition, and progress that adapts to you.
+          </p>
+        </div>
 
         {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+        <div className="flex flex-col justify-center gap-4 pt-4 sm:flex-row">
           <Link href="/register">
-            <Button size="lg" className="w-full sm:w-auto px-8 py-6 text-lg bg-blue-600 hover:bg-blue-700">
-              🚀 Mulai Belajar Gratis
+            <Button size="lg" variant="primary" className="w-full px-8 py-6 text-lg sm:w-auto">
+              Start Learning Free
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
           <Link href="/login">
-            <Button size="lg" variant="outline" className="w-full sm:w-auto px-8 py-6 text-lg">
-              Masuk
+            <Button size="lg" variant="outline" className="w-full px-8 py-6 text-lg sm:w-auto">
+              Sign In
             </Button>
           </Link>
         </div>
 
         {/* Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12 text-left">
+        <div className="grid grid-cols-1 gap-6 pt-12 text-left md:grid-cols-3">
           <FeatureCard
-            icon="🧠"
-            title="AI Personal"
-            description="Materi dan latihan disesuaikan dengan level dan kelemahanmu secara otomatis."
+            icon={<Brain className="h-9 w-9 text-primary" />}
+            title="Personalized Practice"
+            description="Exercises adapt to your level and target your weak spots automatically."
           />
           <FeatureCard
-            icon="📚"
+            icon={<BookOpen className="h-9 w-9 text-primary" />}
             title="Spaced Repetition"
-            description="Metode ilmiah agar kosakata dan grammar melekat di ingatan jangka panjang."
+            description="A proven method to lock vocabulary and grammar into long-term memory."
           />
           <FeatureCard
-            icon="🗣️"
-            title="Latihan Speaking"
-            description="AI akan mendengarkan dan memberi koreksi pengucapan secara real-time."
+            icon={<MessageSquare className="h-9 w-9 text-primary" />}
+            title="Phrase Drills"
+            description="Practice real-world phrases and build fluency beyond single words."
           />
         </div>
       </div>
@@ -57,15 +70,17 @@ function FeatureCard({
   title,
   description,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   title: string;
   description: string;
 }) {
   return (
-    <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-      <div className="text-4xl mb-3">{icon}</div>
-      <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
-      <p className="text-gray-600 text-sm mt-1 leading-relaxed">{description}</p>
-    </div>
+    <Card className="p-6 transition-shadow hover:shadow-md">
+      <div className="mb-3">{icon}</div>
+      <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+        {description}
+      </p>
+    </Card>
   );
 }

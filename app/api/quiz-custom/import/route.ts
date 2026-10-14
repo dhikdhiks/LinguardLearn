@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   const setName =
     typeof body?.name === 'string' && body.name.trim()
       ? body.name.trim().slice(0, 200)
-      : `Kuis Import ${new Date().toLocaleDateString('id-ID')}`;
+      : `Import Quiz ${new Date().toLocaleDateString('en-US')}`;
 
   const itemIds: string[] = [];
   const skipped: string[] = [];
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
   } else {
     const rawWords = Array.isArray(body?.words) ? body.words : null;
     if (!rawWords || rawWords.length === 0) {
-      return NextResponse.json({ error: 'Daftar kata kosong' }, { status: 400 });
+      return NextResponse.json({ error: 'Word list is empty' }, { status: 400 });
     }
 
     const words: string[] = Array.from(
@@ -115,11 +115,11 @@ export async function POST(req: NextRequest) {
         try {
           const e = await fetchDictionaryEntry(w, userId);
           if (!e) {
-            failed.push(`${w} (tidak ditemukan)`);
+            failed.push(`${w} (not found)`);
             continue;
           }
           if (!e.translation) {
-            skipped.push(`${w} (terjemahan tidak ditemukan)`);
+            skipped.push(`${w} (translation not found)`);
             continue;
           }
           entries.push({
@@ -193,7 +193,7 @@ export async function POST(req: NextRequest) {
   if (itemIds.length === 0) {
     return NextResponse.json(
       {
-        error: 'Tidak ada kata yang bisa diimport',
+        error: 'No words could be imported',
         imported: 0,
         skipped,
         failed,
@@ -211,7 +211,7 @@ export async function POST(req: NextRequest) {
     .values({
       userId: session.user.id,
       name: setName,
-      description: `Kuis kosakata — ${uniqueItemIds.length} soal, diimpor otomatis`,
+      description: `Vocabulary quiz — ${uniqueItemIds.length} questions, imported automatically`,
       contentType: 'vocabulary',
       direction: 'source_to_target',
       questionType: 'type_in',

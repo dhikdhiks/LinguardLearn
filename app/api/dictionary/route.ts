@@ -28,7 +28,7 @@ export async function GET(request: Request) {
       // userId dipakai agar hasil bisa di-cache (kolom user_id punya FK ke users).
       const result = await fetchDictionaryEntry(word, userId);
       if (!result) {
-        return NextResponse.json({ error: `Kata "${word}" tidak ditemukan` }, { status: 404 });
+        return NextResponse.json({ error: `Word "${word}" not found` }, { status: 404 });
       }
       return NextResponse.json(result);
     } catch (error) {

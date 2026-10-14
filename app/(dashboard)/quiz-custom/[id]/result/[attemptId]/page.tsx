@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Check, X, Trophy, Clock, RefreshCw, Share2, Download } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, Check, X, Trophy, Clock, RefreshCw, Calendar, Eye, EyeOff } from 'lucide-react';
+import { Button, Card, Chip, ProgressCircle, Skeleton, Spinner } from '@heroui/react';
 
 interface AttemptDetail {
   id: string;
@@ -41,6 +43,7 @@ export default function QuizCustomResultPage() {
 
   useEffect(() => {
     loadResult();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attemptId]);
 
   const loadResult = async () => {
@@ -51,10 +54,10 @@ export default function QuizCustomResultPage() {
       if (found) {
         setAttempt(found);
       } else {
-        setError('Hasil kuis tidak ditemukan');
+        setError('Quiz result not found');
       }
     } catch (err) {
-      setError('Gagal memuat hasil');
+      setError('Failed to load results');
     } finally {
       setLoading(false);
     }
@@ -68,7 +71,7 @@ export default function QuizCustomResultPage() {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString('id-ID', {
+    return new Date(dateStr).toLocaleString('en-US', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -78,42 +81,40 @@ export default function QuizCustomResultPage() {
   };
 
   const formatMs = (ms: number) => {
-    return `${(ms / 1000).toFixed(1)} detik`;
-  };
-
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600 dark:text-green-400';
-    if (score >= 50) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-red-600 dark:text-red-400';
-  };
-
-  const getScoreBg = (score: number) => {
-    if (score >= 80) return 'bg-green-100 dark:bg-green-900/30';
-    if (score >= 50) return 'bg-yellow-100 dark:bg-yellow-900/30';
-    return 'bg-red-100 dark:bg-red-900/30';
+    return `${(ms / 1000).toFixed(1)}s`;
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Memuat hasil...</p>
-        </div>
+      <div className="flex min-h-screen items-center justify-center p-6">
+        <Card className="w-full max-w-2xl p-8">
+          <div className="mb-6 flex items-center gap-3">
+            <Spinner size="lg" color="accent" />
+            <p className="text-lg text-muted-foreground">Loading results…</p>
+          </div>
+          <div className="space-y-4">
+            <Skeleton animationType="shimmer" className="h-12 w-48" />
+            <Skeleton animationType="pulse" className="h-6 w-full" />
+            <Skeleton animationType="pulse" className="h-6 w-5/6" />
+            <Skeleton animationType="pulse" className="h-6 w-2/3" />
+          </div>
+        </Card>
       </div>
     );
   }
 
   if (error || !attempt) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 text-center max-w-md">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Hasil Tidak Ditemukan</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">{error || 'Data tidak tersedia'}</p>
-          <Link href="/quiz-custom" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
-            <ArrowLeft className="w-4 h-4" /> Kembali
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <Card className="w-full max-w-md p-8 text-center">
+          <h2 className="mb-2 text-xl font-bold text-foreground">Result Not Found</h2>
+          <p className="mb-6 text-muted-foreground">{error || 'No data available'}</p>
+          <Link href="/quiz-custom">
+            <Button variant="primary">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back
+            </Button>
           </Link>
-        </div>
+        </Card>
       </div>
     );
   }
@@ -122,176 +123,184 @@ export default function QuizCustomResultPage() {
     ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
     : 0;
 
+  const scoreColor = percentage >= 80 ? 'success' : percentage >= 50 ? 'warning' : 'danger';
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 py-8 px-4">
-      <div className="max-w-3xl mx-auto">
+    <div className="py-8 px-4">
+      <div className="mx-auto max-w-3xl">
         {/* HEADER */}
         <div className="mb-6">
           <Link
             href="/quiz-custom"
-            className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4"
+            className="mb-4 inline-flex items-center gap-2 text-muted-foreground transition hover:text-foreground"
           >
-            <ArrowLeft className="w-4 h-4" /> Kembali ke Daftar Kuis
+            <ArrowLeft className="h-4 w-4" /> Back to Quizzes
           </Link>
 
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-8 text-center">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <Trophy className={`w-10 h-10 ${getScoreColor(percentage)}`} />
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{attempt.setName}</h1>
+          <Card className="p-8 text-center">
+            <div className="mb-4 flex items-center justify-center gap-3">
+              <Trophy className={`h-10 w-10 ${
+                percentage >= 80 ? 'text-yellow-500' : percentage >= 50 ? 'text-blue-500' : 'text-muted-foreground'
+              }`} />
+              <h1 className="text-3xl font-bold text-foreground">{attempt.setName}</h1>
             </div>
 
-            <div className={`inline-block px-8 py-3 rounded-full ${getScoreBg(percentage)} ${getScoreColor(percentage)} mb-4`}>
-              <span className="text-3xl font-bold">{percentage}%</span>
+            <div className="mb-4 flex justify-center">
+              <ProgressCircle value={percentage} color={scoreColor} size="lg">
+                <span className="text-2xl font-bold">{percentage}%</span>
+              </ProgressCircle>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 text-sm mb-6">
-              <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                <p className="text-gray-500 dark:text-gray-400">Benar</p>
+            <div className="mb-6 grid grid-cols-3 gap-4 text-sm">
+              <div className="rounded-xl bg-accent/50 p-3">
+                <p className="text-muted-foreground">Correct</p>
                 <p className="text-2xl font-bold text-green-600 dark:text-green-400">{attempt.correctAnswers}</p>
               </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                <p className="text-gray-500 dark:text-gray-400">Salah</p>
+              <div className="rounded-xl bg-accent/50 p-3">
+                <p className="text-muted-foreground">Wrong</p>
                 <p className="text-2xl font-bold text-red-600 dark:text-red-400">{attempt.wrongAnswers}</p>
               </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                <p className="text-gray-500 dark:text-gray-400">Total</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{attempt.totalQuestions}</p>
+              <div className="rounded-xl bg-accent/50 p-3">
+                <p className="text-muted-foreground">Total</p>
+                <p className="text-2xl font-bold text-foreground">{attempt.totalQuestions}</p>
               </div>
             </div>
 
-            <div className="flex items-center justify-center gap-6 text-sm text-gray-600 dark:text-gray-400">
+            <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
+                <Clock className="h-4 w-4" />
                 {formatTime(attempt.durationSeconds)}
               </span>
               <span className="flex items-center gap-1">
-                <span>📅</span>
+                <Calendar className="h-4 w-4" />
                 {formatDate(attempt.startedAt)}
               </span>
             </div>
 
-            <div className="flex flex-wrap justify-center gap-3 mt-6">
-              <button
-                onClick={() => router.push(`/quiz-custom/${setId}/play`)}
-                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium transition"
-              >
-                <RefreshCw className="w-4 h-4" /> Main Lagi
-              </button>
-              <Link
-                href={`/quiz-custom/${setId}/history`}
-                className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-5 py-2.5 rounded-lg font-medium transition"
-              >
-                <ArrowLeft className="w-4 h-4" /> Riwayat Kuis
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <Button variant="primary" onPress={() => router.push(`/quiz-custom/${setId}/play`)}>
+                <RefreshCw className="mr-1 h-4 w-4" /> Play Again
+              </Button>
+              <Link href={`/quiz-custom/${setId}/history`}>
+                <Button variant="outline">
+                  <ArrowLeft className="mr-1 h-4 w-4" /> Quiz History
+                </Button>
               </Link>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* DETAILED ANSWERS */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-          <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-4 flex-wrap">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Detail Jawaban
+        <Card className="overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border p-6">
+            <h2 className="text-xl font-bold text-foreground">
+              Answer Review
               {showOnlyWrong && attempt.wrongAnswers > 0 && (
                 <span className="ml-2 text-sm font-normal text-red-500">
-                  ({attempt.answers.filter(a => !a.isCorrect).length} salah)
+                  ({attempt.answers.filter(a => !a.isCorrect).length} wrong)
                 </span>
               )}
             </h2>
-            <button
-              onClick={() => setShowOnlyWrong(prev => !prev)}
-              className="px-3 py-1.5 text-sm rounded-lg font-medium transition bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={() => setShowOnlyWrong(prev => !prev)}
             >
-              {showOnlyWrong ? '👁️ Tampilkan semua' : '❌ Hanya yang salah'}
-            </button>
+              {showOnlyWrong ? <Eye className="mr-1 h-4 w-4" /> : <EyeOff className="mr-1 h-4 w-4" />}
+              {showOnlyWrong ? 'Show all' : 'Wrong only'}
+            </Button>
           </div>
 
           {!showOnlyWrong && attempt.answers.length === 0 ? (
-            <p className="p-6 text-gray-500 dark:text-gray-400 text-sm">Tidak ada detail jawaban.</p>
+            <p className="p-6 text-sm text-muted-foreground">No answer details.</p>
           ) : showOnlyWrong && attempt.answers.length > 0 && attempt.answers.every(a => a.isCorrect) ? (
-            <div className="p-12 text-center">
-              <p className="text-2xl mb-2">🎉</p>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-12 text-center"
+            >
+              <p className="mb-2 text-2xl">🎉</p>
               <p className="text-lg font-semibold text-green-600 dark:text-green-400">
-                Semua jawaban benar!
+                All answers correct!
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Tidak ada yang perlu direview.
+              <p className="mt-1 text-sm text-muted-foreground">
+                Nothing left to review.
               </p>
-            </div>
+            </motion.div>
           ) : (
-            <div className="divide-y divide-gray-100 dark:divide-gray-700">
+            <div className="divide-y divide-border">
               {attempt.answers
                 .filter(a => !showOnlyWrong || !a.isCorrect)
                 .map((answer, index) => (
-              <div key={answer.itemId} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Soal {index + 1}
-                      </span>
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        answer.isCorrect
-                          ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-                          : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
-                      }`}>
-                        {answer.isCorrect ? '✅ Benar' : '❌ Salah'}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {formatMs(answer.timeSpentMs)}
-                      </span>
+                <motion.div
+                  key={answer.itemId}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: index * 0.03 }}
+                  className="p-6 transition hover:bg-accent/30"
+                >
+                  <div className="mb-3 flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-2 flex flex-wrap items-center gap-3">
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Question {index + 1}
+                        </span>
+                        <Chip size="sm" color={answer.isCorrect ? 'success' : 'danger'} variant="soft">
+                          <Chip.Label className="flex items-center gap-1">
+                            {answer.isCorrect ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                            {answer.isCorrect ? 'Correct' : 'Wrong'}
+                          </Chip.Label>
+                        </Chip>
+                        <span className="text-xs text-muted-foreground">
+                          {formatMs(answer.timeSpentMs)}
+                        </span>
+                      </div>
+                      <p className="text-lg font-medium text-foreground">
+                        {answer.question}
+                      </p>
                     </div>
-                    <p className="text-lg font-medium text-gray-900 dark:text-white">
-                      {answer.question}
-                    </p>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
-                      <span className="text-sm font-medium text-green-700 dark:text-green-300">Jawaban Benar</span>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
+                      <div className="mb-1 flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        <span className="text-sm font-medium text-green-700 dark:text-green-300">Correct Answer</span>
+                      </div>
+                      <p className="text-lg font-medium text-green-800 dark:text-green-200">
+                        {answer.correctAnswer}
+                      </p>
                     </div>
-                    <p className="text-lg font-medium text-green-800 dark:text-green-200">
-                      {answer.correctAnswer}
-                    </p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800">
-                    <div className="flex items-center gap-2 mb-1">
-                      <X className="w-4 h-4 text-red-600 dark:text-red-400" />
-                      <span className="text-sm font-medium text-red-700 dark:text-red-300">Jawaban Anda</span>
+                    <div className="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
+                      <div className="mb-1 flex items-center gap-2">
+                        <X className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <span className="text-sm font-medium text-red-700 dark:text-red-300">Your Answer</span>
+                      </div>
+                      <p className={`text-lg font-medium ${answer.isCorrect ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
+                        {answer.userAnswer || '(empty)'}
+                      </p>
                     </div>
-                    <p className={`text-lg font-medium ${answer.isCorrect ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
-                      {answer.userAnswer || '(kosong)'}
-                    </p>
                   </div>
-                </div>
-              </div>
+                </motion.div>
                 ))}
             </div>
           )}
-        </div>
+        </Card>
 
         {/* ACTION BUTTONS */}
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <button
-            onClick={() => router.push(`/quiz-custom/${setId}/play`)}
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium transition"
-          >
-            <RefreshCw className="w-4 h-4" /> Main Lagi
-          </button>
-          <Link
-            href={`/quiz-custom/${setId}/history`}
-            className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-5 py-2.5 rounded-lg font-medium transition"
-          >
-            <ArrowLeft className="w-4 h-4" /> Riwayat Kuis
+          <Button variant="primary" onPress={() => router.push(`/quiz-custom/${setId}/play`)}>
+            <RefreshCw className="mr-1 h-4 w-4" /> Play Again
+          </Button>
+          <Link href={`/quiz-custom/${setId}/history`}>
+            <Button variant="outline">
+              <ArrowLeft className="mr-1 h-4 w-4" /> Quiz History
+            </Button>
           </Link>
-          <Link
-            href="/quiz-custom"
-            className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-5 py-2.5 rounded-lg font-medium transition"
-          >
-            <ArrowLeft className="w-4 h-4" /> Daftar Kuis
+          <Link href="/quiz-custom">
+            <Button variant="outline">
+              <ArrowLeft className="mr-1 h-4 w-4" /> All Quizzes
+            </Button>
           </Link>
         </div>
       </div>

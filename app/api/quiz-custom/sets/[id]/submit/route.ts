@@ -22,12 +22,12 @@ export async function POST(
     .limit(1);
 
   if (!set) {
-    return NextResponse.json({ error: 'Kuis tidak ditemukan' }, { status: 404 });
+    return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
   }
 
   // Jika tidak dipublikasikan, hanya pemilik yang bisa mengunggah hasilnya
   if (!set.isPublic && set.userId !== session.user.id) {
-    return NextResponse.json({ error: 'Kuis ini bersifat pribadi' }, { status: 403 });
+    return NextResponse.json({ error: 'This quiz is private' }, { status: 403 });
   }
 
   try {
@@ -35,7 +35,7 @@ export async function POST(
     const { answers, durationSeconds, startedAt } = body;
 
     if (!answers || !Array.isArray(answers)) {
-      return NextResponse.json({ error: 'answers wajib diisi' }, { status: 400 });
+      return NextResponse.json({ error: 'answers is required' }, { status: 400 });
     }
 
     // Hitung skor
@@ -97,6 +97,6 @@ export async function POST(
     });
   } catch (error) {
     console.error('Submit quiz error:', error);
-    return NextResponse.json({ error: 'Gagal menyimpan hasil kuis' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to save quiz results' }, { status: 500 });
   }
 }

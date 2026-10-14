@@ -22,12 +22,12 @@ export async function POST(
     .limit(1);
 
   if (!set) {
-    return NextResponse.json({ error: 'Kuis tidak ditemukan' }, { status: 404 });
+    return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
   }
 
   // Jika tidak dipublikasikan, hanya pemilik yang bisa memainkannya
   if (!set.isPublic && set.userId !== session.user.id) {
-    return NextResponse.json({ error: 'Kuis ini bersifat pribadi' }, { status: 403 });
+    return NextResponse.json({ error: 'This quiz is private' }, { status: 403 });
   }
 
   const items = await db
@@ -37,7 +37,7 @@ export async function POST(
     .orderBy(quizCustomSetItems.sortOrder);
 
   if (items.length === 0) {
-    return NextResponse.json({ error: 'Kuis kosong, tambahkan soal dulu' }, { status: 400 });
+    return NextResponse.json({ error: 'This quiz is empty — add some questions first' }, { status: 400 });
   }
 
   // Ambil data lengkap vocabulary/phrases
@@ -98,6 +98,18 @@ export async function POST(
     const questionText = item.customQuestion?.trim() || sourceText;
     const answerText = item.customAnswer?.trim() || targetText;
 
+    // Vocabulary items whose meaning contains a comma represent multiple
+    // meanings (e.g. "change" -> "mengubah, ganti"). Typed input cannot
+    // reliably grade multi-meaning answers, so these are always presented
+    // as multiple choice — regardless of the set's question type.
+    const forceMultipleChoice =
+      item.itemType === 'vocabulary' && answerText.includes(',');
+
+    const isMultipleChoice =
+      forceMultipleChoice ||
+      set.questionType === 'multiple_choice' ||
+      (set.questionType === 'mixed' && Math.random() > 0.5);
+
     return {
       id: item.id,
       index,
@@ -114,6 +126,7 @@ export async function POST(
       difficulty: itemData?.difficulty ?? null,
       isLearned: flags.isLearned ?? false,
       isFavorite: flags.isFavorite ?? false,
+      isMultipleChoice,
     };
   });
 
@@ -129,26 +142,29 @@ export async function POST(
     questions = questions.slice(0, questionsPerSession);
   }
 
-  // Untuk multiple choice, generate distractors
-  if (set.questionType === 'multiple_choice' || set.questionType === 'mixed') {
+  // Generate options for every multiple choice question — including vocabulary
+  // items forced into multiple choice (comma-containing meanings), which may
+  // occur in any question type, even type_in.
+  if (questions.some(q => q.isMultipleChoice)) {
     // Ambil distractors dari database (kata/kalimat lain)
     const allVocab = await db.select({ id: vocabulary.id, word: vocabulary.word, translation: vocabulary.translation }).from(vocabulary).limit(100);
     const allPhrases = await db.select({ id: phrases.id, phrase: phrases.phrase, translation: phrases.translation }).from(phrases).limit(100);
 
     questions = questions.map(q => {
-      const isMultipleChoice = set.questionType === 'multiple_choice' || (set.questionType === 'mixed' && Math.random() > 0.5);
-      if (!isMultipleChoice) return q;
+      if (!q.isMultipleChoice) return q;
 
       const correctAnswer = q.correctAnswer;
       const pool = q.itemType === 'vocabulary' ? allVocab : allPhrases;
-      const distractors = pool
-        .filter(p => {
-          const pText = q.itemType === 'vocabulary' ? p.translation : p.translation;
-          return pText !== correctAnswer;
-        })
+      // Unique, non-empty translations that are not the correct answer.
+      const distractors = Array.from(
+        new Set(
+          pool
+            .map(p => p.translation)
+            .filter((t): t is string => !!t && t !== correctAnswer)
+        )
+      )
         .sort(() => Math.random() - 0.5)
-        .slice(0, 3)
-        .map(p => q.itemType === 'vocabulary' ? p.translation : p.translation);
+        .slice(0, 3);
 
       const options = [correctAnswer, ...distractors].sort(() => Math.random() - 0.5);
 

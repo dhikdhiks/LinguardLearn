@@ -21,7 +21,7 @@ export async function GET(
     .limit(1);
 
   if (!set) {
-    return NextResponse.json({ error: 'Kuis tidak ditemukan' }, { status: 404 });
+    return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
   }
 
   // Ambil items
@@ -53,7 +53,7 @@ export async function PUT(
     .limit(1);
 
   if (!existing) {
-    return NextResponse.json({ error: 'Kuis tidak ditemukan' }, { status: 404 });
+    return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
   }
 
   try {
@@ -90,7 +90,7 @@ export async function PUT(
     return NextResponse.json(updated);
   } catch (error) {
     console.error('Update quiz set error:', error);
-    return NextResponse.json({ error: 'Gagal mengupdate kuis' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update quiz' }, { status: 500 });
   }
 }
 
@@ -113,7 +113,7 @@ export async function DELETE(
     .limit(1);
 
   if (!existing) {
-    return NextResponse.json({ error: 'Kuis tidak ditemukan' }, { status: 404 });
+    return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
   }
 
   await db.delete(quizCustomSets).where(eq(quizCustomSets.id, id));

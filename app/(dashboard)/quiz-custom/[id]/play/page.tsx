@@ -3,7 +3,19 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Check, X, AlertCircle } from 'lucide-react';
+import {
+  Button,
+  Card,
+  Chip,
+  Input,
+  ProgressBar,
+  Radio,
+  RadioGroup,
+  Skeleton,
+  Spinner,
+} from '@heroui/react';
 
 interface QuizQuestion {
   id: string;
@@ -41,6 +53,19 @@ interface UserAnswer {
   isCorrect: boolean;
   timeSpentMs: number;
 }
+
+/**
+ * Multiple Choice Only rule:
+ * Vocabulary items whose meaning contains a comma represent multiple
+ * meanings (e.g. "change" -> "mengubah, ganti") and must never be
+ * presented as typed-input questions. The server already flags these
+ * as `isMultipleChoice`; this helper re-checks the raw answer as a
+ * defense-in-depth guard so a typed input can never be rendered or
+ * submitted for such items, regardless of how the payload was built.
+ */
+const isMultipleChoiceOnly = (q: QuizQuestion): boolean =>
+  q.isMultipleChoice === true ||
+  (q.itemType === 'vocabulary' && q.correctAnswer.includes(','));
 
 export default function QuizCustomPlayPage() {
   const router = useRouter();
@@ -92,17 +117,18 @@ export default function QuizCustomPlayPage() {
       if (timerRef.current) clearInterval(timerRef.current);
       clearAutoNext();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startQuiz = async () => {
     try {
       const res = await fetch(`/api/quiz-custom/sets/${setId}/start`, { method: 'POST' });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal memulai kuis');
+      if (!res.ok) throw new Error(data.error || 'Failed to start quiz');
       setQuiz(data);
       setCurrentQuestionStartTime(Date.now());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal memuat kuis');
+      setError(err instanceof Error ? err.message : 'Failed to load quiz');
     } finally {
       setLoading(false);
     }
@@ -136,15 +162,17 @@ export default function QuizCustomPlayPage() {
   const handleSubmitAnswer = (submittedAnswer?: string) => {
     if (!currentQuestion) return;
 
+    const mcOnly = isMultipleChoiceOnly(currentQuestion);
+
+    // Multiple Choice Only items can never be graded from typed input.
     let finalAnswer = '';
-    if (currentQuestion.isMultipleChoice) {
+    if (mcOnly) {
       finalAnswer = submittedAnswer ?? (selectedOption || '');
     } else {
       finalAnswer = submittedAnswer ?? userInput;
     }
 
     if (!finalAnswer.trim()) {
-      alert('Masukkan jawaban terlebih dahulu');
       return;
     }
 
@@ -199,11 +227,11 @@ export default function QuizCustomPlayPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal menyimpan hasil');
+      if (!res.ok) throw new Error(data.error || 'Failed to save results');
       router.push(`/quiz-custom/${setId}/result/${data.attemptId}`);
     } catch (err) {
       console.error('Submit failed:', err);
-      alert('Gagal menyimpan hasil kuis');
+      alert('Failed to save quiz results');
     }
   };
 
@@ -224,36 +252,52 @@ export default function QuizCustomPlayPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Memuat kuis...</p>
-        </div>
+      <div className="flex min-h-screen items-center justify-center p-6">
+        <Card className="w-full max-w-2xl p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <Spinner size="lg" color="accent" />
+            <p className="text-lg text-muted-foreground">Loading quiz…</p>
+          </div>
+          <div className="space-y-4">
+            <Skeleton animationType="shimmer" className="h-10 w-3/4" />
+            <Skeleton animationType="shimmer" className="h-6 w-1/2" />
+            <div className="pt-2 space-y-2">
+              <Skeleton animationType="pulse" className="h-14 w-full" />
+              <Skeleton animationType="pulse" className="h-14 w-full" />
+              <Skeleton animationType="pulse" className="h-14 w-full" />
+            </div>
+          </div>
+        </Card>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 text-center max-w-md">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Gagal Memuat Kuis</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
-          <Link href="/quiz-custom" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
-            <ArrowLeft className="w-4 h-4" /> Kembali ke Daftar
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <Card className="w-full max-w-md p-8 text-center">
+          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
+          <h2 className="mb-2 text-xl font-bold text-foreground">Failed to Load Quiz</h2>
+          <p className="mb-6 text-muted-foreground">{error}</p>
+          <Link href="/quiz-custom">
+            <Button variant="primary">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Quizzes
+            </Button>
           </Link>
-        </div>
+        </Card>
       </div>
     );
   }
 
-  if (!quiz || !currentQuestion) {
+  if (!quiz || !currentQuestion || finished) {
     return null;
   }
 
-  const isMultipleChoice = currentQuestion.isMultipleChoice;
-  const isCorrect = showResult ? checkAnswer(isMultipleChoice ? (selectedOption || '') : userInput) : false;
+  const mcOnly = isMultipleChoiceOnly(currentQuestion);
+  // Multiple Choice Only items always need options. The API generates them,
+  // but fall back to a single (correct) option so a typed input is never shown.
+  const mcOptions = currentQuestion.options ?? [currentQuestion.correctAnswer];
+  const isCorrect = showResult ? checkAnswer(mcOnly ? (selectedOption || '') : userInput) : false;
   const progress = ((currentIndex + 1) / quiz.totalQuestions) * 100;
 
   // Progress indicator: window maksimal 10 nomor (1-10, 11-20, ...)
@@ -262,196 +306,242 @@ export default function QuizCustomPlayPage() {
   const windowEnd = Math.min(windowStart + WINDOW_SIZE, quiz.totalQuestions);
   const visibleQuestions = quiz.questions.slice(windowStart, windowEnd);
 
+  const difficultyColor =
+    currentQuestion.difficulty === 'beginner'
+      ? 'success'
+      : currentQuestion.difficulty === 'intermediate'
+        ? 'warning'
+        : 'danger';
+
+  const correctCount = answers.filter(a => a.isCorrect).length;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 py-8 px-4">
-      <div className="max-w-3xl mx-auto">
+    <div className="py-8 px-4">
+      <div className="mx-auto max-w-3xl">
         {/* HEADER */}
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3 flex items-center justify-between">
             <Link
               href="/quiz-custom"
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+              className="rounded-lg p-2 text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
+              aria-label="Back to quizzes"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="h-5 w-5" />
             </Link>
             <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <span className="text-sm font-medium text-muted-foreground tabular-nums">
                 {formatTime(elapsedTime)}
               </span>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white truncate">{quiz.setName}</h1>
-            <span className="text-sm bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full">
-              Soal {currentIndex + 1} / {quiz.totalQuestions}
-            </span>
+            <h1 className="truncate text-2xl font-bold text-foreground">{quiz.setName}</h1>
+            <Chip size="sm" variant="soft" color="accent">
+              <Chip.Label>
+                Question {currentIndex + 1} / {quiz.totalQuestions}
+              </Chip.Label>
+            </Chip>
           </div>
-          <div className="mt-3 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
+          <div className="mt-3">
+            <ProgressBar value={progress} color="accent" size="md">
+              <ProgressBar.Track />
+              <ProgressBar.Fill />
+            </ProgressBar>
           </div>
         </div>
 
         {/* QUESTION CARD */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-8 mb-6">
+        <Card className="mb-6 p-8">
           {/* Question */}
           <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <span className={`text-xs px-2 py-1 rounded ${
-                currentQuestion.difficulty === 'beginner' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
-                currentQuestion.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' :
-                'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
-              }`}>
-                {currentQuestion.difficulty}
-              </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                {currentQuestion.itemType === 'vocabulary' ? '📚 Kosakata' : '💬 Kalimat'}
-              </span>
+            <div className="mb-3 flex items-center gap-2">
+              <Chip size="sm" color={difficultyColor} variant="soft">
+                <Chip.Label className="capitalize">{currentQuestion.difficulty}</Chip.Label>
+              </Chip>
+              <Chip size="sm" variant="soft">
+                <Chip.Label>
+                  {currentQuestion.itemType === 'vocabulary' ? 'Vocabulary' : 'Phrase'}
+                </Chip.Label>
+              </Chip>
+              {mcOnly && (
+                <Chip size="sm" variant="secondary">
+                  <Chip.Label>Multiple Choice Only</Chip.Label>
+                </Chip>
+              )}
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <motion.div
+              key={currentQuestion.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="mb-2 text-3xl font-bold text-foreground"
+            >
               {getDisplayQuestion()}
-            </div>
+            </motion.div>
             {currentQuestion.phonetic && (
-              <div className="text-lg text-gray-500 dark:text-gray-400 font-mono mb-2">
+              <div className="mb-2 font-mono text-lg text-muted-foreground">
                 /{currentQuestion.phonetic}/
               </div>
             )}
-            {currentQuestion.isMultipleChoice && currentQuestion.options && (
+            {mcOnly && (
               <div className="mt-4 space-y-2" role="radiogroup">
-                {currentQuestion.options.map((opt, i) => (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      setSelectedOption(opt);
-                      handleSubmitAnswer(opt);
-                    }}
-                    disabled={showResult}
-                    className={`w-full text-left p-4 rounded-xl border-2 transition ${
-                      showResult
-                        ? opt === currentQuestion.correctAnswer
-                          ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
-                          : opt === selectedOption
-                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
-                          : 'border-gray-200 dark:border-gray-700'
-                        : selectedOption === opt
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                        showResult
-                          ? opt === currentQuestion.correctAnswer
-                            ? 'border-green-500'
-                            : opt === selectedOption
-                            ? 'border-red-500'
-                            : 'border-gray-300 dark:border-gray-600'
-                          : selectedOption === opt
-                          ? 'border-blue-500 bg-blue-500'
-                          : 'border-gray-300 dark:border-gray-600'
-                      }`}>
-                        {showResult && opt === currentQuestion.correctAnswer && (
-                          <Check className="w-4 h-4 text-green-500" />
-                        )}
-                        {showResult && opt === selectedOption && !isCorrect && (
-                          <X className="w-4 h-4 text-red-500" />
-                        )}
-                        {!showResult && selectedOption === opt && (
-                          <div className="w-3 h-3 rounded-full bg-blue-500" />
-                        )}
-                      </div>
-                      <span className="text-lg text-gray-900 dark:text-white">{opt}</span>
-                    </div>
-                  </button>
-                ))}
+                <RadioGroup
+                  value={selectedOption ?? ''}
+                  onChange={value => {
+                    if (showResult) return;
+                    setSelectedOption(value);
+                    handleSubmitAnswer(value);
+                  }}
+                  isDisabled={showResult}
+                  className="space-y-2"
+                >
+                  {mcOptions.map(opt => {
+                    const isCorrectOption = opt === currentQuestion.correctAnswer;
+                    const isChosen = opt === selectedOption;
+                    return (
+                      <Radio key={opt} value={opt} className="w-full">
+                        <Radio.Content
+                          className={({ isSelected }) =>
+                            `flex w-full items-center gap-3 rounded-xl border-2 p-4 text-left transition ${
+                              showResult
+                                ? isCorrectOption
+                                  ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
+                                  : isChosen && !isCorrect
+                                    ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
+                                    : 'border-border'
+                                : isSelected
+                                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                  : 'border-border hover:border-blue-400 dark:hover:border-blue-700'
+                            }`
+                          }
+                        >
+                          <Radio.Control
+                            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
+                              showResult
+                                ? isCorrectOption
+                                  ? 'border-green-500'
+                                  : isChosen && !isCorrect
+                                    ? 'border-red-500'
+                                    : 'border-border'
+                                : ''
+                            }`}
+                          >
+                            <Radio.Indicator>
+                              {showResult && isCorrectOption && (
+                                <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                              )}
+                              {showResult && isChosen && !isCorrect && (
+                                <X className="h-4 w-4 text-red-600 dark:text-red-400" />
+                              )}
+                            </Radio.Indicator>
+                          </Radio.Control>
+                          <span className="text-lg text-foreground">{opt}</span>
+                        </Radio.Content>
+                      </Radio>
+                    );
+                  })}
+                </RadioGroup>
               </div>
             )}
           </div>
 
-          {/* Answer Input (for type_in) */}
-          {!isMultipleChoice && (
+          {/* Answer Input (type-in only — never rendered for Multiple Choice Only items) */}
+          {!mcOnly && (
             <div className="space-y-4">
               {!showResult ? (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Jawaban Anda
-                  </label>
-                  <input
-                    type="text"
+                  <Input
+                    aria-label="Your Answer"
                     value={userInput}
                     onChange={e => setUserInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     autoFocus
-                    placeholder={quiz.direction === 'target_to_source' ? 'Ketik dalam Bahasa Inggris...' : 'Ketik dalam Bahasa Indonesia...'}
-                    className="w-full px-4 py-3 text-lg border-2 border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    placeholder={
+                      quiz.direction === 'target_to_source'
+                        ? 'Type in English…'
+                        : 'Type in Indonesian…'
+                    }
+                    fullWidth
                   />
-                  <button
+                  <Button
+                    className="mt-2 w-full"
+                    variant="primary"
+                    size="lg"
                     onClick={() => handleSubmitAnswer()}
-                    disabled={!userInput.trim()}
-                    className="w-full mt-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 rounded-xl transition shadow-sm"
+                    isDisabled={!userInput.trim()}
                   >
-                    Periksa Jawaban
-                  </button>
+                    Check Answer
+                  </Button>
                 </div>
               ) : (
-                <div className={`p-6 rounded-xl border-2 ${
-                  isCorrect
-                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                    : 'border-red-500 bg-red-50 dark:bg-red-900/20'
-                }`}>
-                  <div className="flex items-center gap-3 mb-3">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.2 }}
+                  className={`rounded-xl border-2 p-6 ${
+                    isCorrect
+                      ? 'border-green-500/50 bg-green-50 dark:bg-green-900/20'
+                      : 'border-red-500/50 bg-red-50 dark:bg-red-900/20'
+                  }`}
+                >
+                  <div className="mb-3 flex items-center gap-3">
                     {isCorrect ? (
-                      <Check className="w-8 h-8 text-green-500 flex-shrink-0" />
+                      <Check className="h-8 w-8 shrink-0 text-green-600 dark:text-green-400" />
                     ) : (
-                      <X className="w-8 h-8 text-red-500 flex-shrink-0" />
+                      <X className="h-8 w-8 shrink-0 text-red-600 dark:text-red-400" />
                     )}
                     <div>
-                      <p className={`text-xl font-bold ${isCorrect ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
-                        {isCorrect ? 'Benar! 🎉' : 'Salah'}
+                      <p
+                        className={`text-xl font-bold ${
+                          isCorrect ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'
+                        }`}
+                      >
+                        {isCorrect ? 'Correct!' : 'Not quite'}
                       </p>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        Jawaban yang benar: <span className="font-medium">{getDisplayAnswer()}</span>
+                      <p className="text-muted-foreground">
+                        Correct answer:{' '}
+                        <span className="font-medium text-foreground">{getDisplayAnswer()}</span>
                       </p>
                     </div>
                   </div>
                   {currentQuestion.sourceText !== currentQuestion.question && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Soal asli: {currentQuestion.sourceText} → {currentQuestion.targetText}
+                    <p className="text-sm text-muted-foreground">
+                      Original question: {currentQuestion.sourceText} → {currentQuestion.targetText}
                     </p>
                   )}
-                  <p className="mt-4 text-center text-xs text-gray-400 dark:text-gray-500 animate-pulse">
-                    ⏳ Lanjut ke soal berikutnya secara otomatis...
+                  <p className="mt-4 flex items-center justify-center gap-2 text-center text-xs text-muted-foreground">
+                    <Spinner size="sm" color="accent" />
+                    Moving to the next question…
                   </p>
-                </div>
+                </motion.div>
               )}
             </div>
           )}
 
           {/* Auto-advance notice for multiple choice */}
-          {isMultipleChoice && showResult && (
-            <div className="pt-4 border-t border-gray-100 dark:border-gray-700 text-center">
-              <span className="text-xs text-gray-400 dark:text-gray-500 animate-pulse">
-                ⏳ Lanjut ke soal berikutnya secara otomatis...
+          {mcOnly && showResult && (
+            <div className="border-t border-border pt-4 text-center">
+              <span className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <Spinner size="sm" color="accent" />
+                Moving to the next question…
               </span>
             </div>
           )}
-        </div>
+        </Card>
 
         {/* PROGRESS INDICATOR */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-medium text-gray-800 dark:text-white">Progress</h3>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {answers.filter(a => a.isCorrect).length} / {answers.length} benar
+        <Card className="p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="font-medium text-foreground">Progress</h3>
+            <span className="text-sm text-muted-foreground">
+              {correctCount} / {answers.length} correct
             </span>
           </div>
           <div className="flex gap-1 overflow-x-auto pb-2">
             {visibleQuestions.map((q, i) => {
               const idx = windowStart + i;
               const ans = answers[idx];
-              let color = 'bg-gray-200 dark:bg-gray-700';
+              let color = 'bg-muted';
               if (ans) {
                 color = ans.isCorrect ? 'bg-green-500' : 'bg-red-500';
               } else if (idx === currentIndex) {
@@ -460,19 +550,19 @@ export default function QuizCustomPlayPage() {
               return (
                 <div
                   key={q.id}
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white transition-all ${color}`}
+                  className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white transition-all ${color}`}
                 >
-                  {ans ? (ans.isCorrect ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />) : (idx + 1)}
+                  {ans ? (ans.isCorrect ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />) : idx + 1}
                 </div>
               );
             })}
           </div>
           {quiz.totalQuestions > WINDOW_SIZE && (
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-              Menampilkan soal {windowStart + 1}-{windowEnd} dari {quiz.totalQuestions}
+            <p className="mt-2 text-xs text-muted-foreground">
+              Showing questions {windowStart + 1}–{windowEnd} of {quiz.totalQuestions}
             </p>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

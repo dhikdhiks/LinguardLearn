@@ -20,9 +20,9 @@ export default function BackupPage() {
       a.download = `lingua-vault-backup-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      setMessage({ type: 'success', text: '✅ Backup berhasil diunduh!' });
+      setMessage({ type: 'success', text: '✅ Backup downloaded!' });
     } catch {
-      setMessage({ type: 'error', text: '❌ Gagal export data' });
+      setMessage({ type: 'error', text: '❌ Export failed' });
     }
   };
 
@@ -45,13 +45,13 @@ export default function BackupPage() {
 
       const result = await res.json();
       if (res.ok) {
-        setMessage({ type: 'success', text: `✅ Berhasil mengimport ${result.imported} kata!` });
+        setMessage({ type: 'success', text: `✅ Successfully imported ${result.imported} words!` });
         setTimeout(() => router.push('/vocabulary'), 1500);
       } else {
-        setMessage({ type: 'error', text: result.error || 'Gagal import' });
+        setMessage({ type: 'error', text: result.error || 'Import failed' });
       }
     } catch {
-      setMessage({ type: 'error', text: '❌ File tidak valid' });
+      setMessage({ type: 'error', text: '❌ Invalid file' });
     } finally {
       setLoading(false);
     }
@@ -63,13 +63,13 @@ export default function BackupPage() {
         onClick={() => router.push('/vocabulary')}
         className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
       >
-        <ArrowLeft className="w-4 h-4" /> Kembali ke Kamus
+        <ArrowLeft className="w-4 h-4" /> Back to Dictionary
       </button>
 
       <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">💾 Backup & Restore</h1>
         <p className="text-gray-500 text-sm mb-6">
-          Ekspor semua kata ke file JSON untuk backup, atau import dari file backup sebelumnya.
+          Export all words to a JSON file for backup, or import from a previous backup file.
         </p>
 
         {message && (
@@ -91,7 +91,7 @@ export default function BackupPage() {
 
           <label className="flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-3 rounded-lg font-medium transition cursor-pointer">
             <Upload className="w-4 h-4" />
-            {loading ? 'Mengimport...' : 'Import JSON'}
+            {loading ? 'Importing...' : 'Import JSON'}
             <input
               type="file"
               accept=".json"

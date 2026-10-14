@@ -41,9 +41,9 @@ export default function Navbar({ user }: NavbarProps) {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
-            <span className="text-2xl">📚</span>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent hidden sm:block">
-              LinguaVault
+            <BookOpen className="h-6 w-6 text-primary" />
+            <span className="hidden text-xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent sm:block">
+              LinguaLearn
             </span>
           </Link>
 
@@ -53,16 +53,16 @@ export default function Navbar({ user }: NavbarProps) {
               Dashboard
             </NavLink>
             <NavLink href="/vocabulary" icon={<BookOpen className="w-4 h-4" />}>
-              Kamus
+              Dictionary
             </NavLink>
             <NavLink href="/phrases" icon={<MessageSquare className="w-4 h-4" />}>
-              Kalimat
+              Phrases
             </NavLink>
             <NavLink href="/quiz-custom" icon={<Brain className="w-4 h-4" />}>
-              Kuis
+              Quizzes
             </NavLink>
             <NavLink href="/quiz-custom/browse" icon={<Users className="w-4 h-4" />}>
-              Kuis Publik
+              Public Quizzes
             </NavLink>
 
             {/* Export Dropdown */}
@@ -89,22 +89,22 @@ export default function Navbar({ user }: NavbarProps) {
 
             {/* Import/Export Dropdown */}
 <div className="relative group">
-  <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all">
+    <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all">
     <Upload className="w-4 h-4" />
-    <span>Impor/Ekspor</span>
+    <span>Import / Export</span>
   </button>
   <div className="absolute left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
     <Link href="/vocabulary/import-batch" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-t-lg">
-      📥 Impor Vocabulary
+      Import Vocabulary
     </Link>
     <Link href="/phrases/import-batch" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30">
-      📥 Impor Phrases
+      Import Phrases
     </Link>
     <Link href="/vocabulary/export" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30">
-      📤 Ekspor Vocabulary
+      Export Vocabulary
     </Link>
     <Link href="/phrases/export" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-b-lg">
-      📤 Ekspor Phrases
+      Export Phrases
     </Link>
   </div>
 </div>
@@ -136,7 +136,7 @@ export default function Navbar({ user }: NavbarProps) {
   className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
 >
   <LogOut className="w-4 h-4" />
-  <span className="hidden sm:inline">Logout</span>
+  <span className="hidden sm:inline">Log Out</span>
 </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -154,23 +154,23 @@ export default function Navbar({ user }: NavbarProps) {
               Dashboard
             </MobileNavLink>
             <MobileNavLink href="/vocabulary" icon={<BookOpen className="w-5 h-5" />}>
-              Kamus
+              Dictionary
             </MobileNavLink>
             <MobileNavLink href="/phrases" icon={<MessageSquare className="w-5 h-5" />}>
-              Kalimat
+              Phrases
             </MobileNavLink>
             <MobileNavLink href="/quiz-custom" icon={<Brain className="w-5 h-5" />}>
-              Kuis
+              Quizzes
             </MobileNavLink>
             <MobileNavLink href="/quiz-custom/browse" icon={<Users className="w-5 h-5" />}>
-              Kuis Publik
+              Public Quizzes
             </MobileNavLink>
             <div className="pl-4 space-y-1">
               <MobileNavLink href="/vocabulary/export" icon={<Download className="w-4 h-4" />}>
-                Ekspor Vocabulary
+                Export Vocabulary
               </MobileNavLink>
               <MobileNavLink href="/phrases/export" icon={<Download className="w-4 h-4" />}>
-                Ekspor Phrases
+                Export Phrases
               </MobileNavLink>
             </div>
           </div>

@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
 
     if (existing.length > 0) {
       return NextResponse.json(
-        { error: `Kata "${word}" sudah ada di kamus!` },
+        { error: `Word "${word}" is already in your dictionary!` },
         { status: 400 }
       );
     }

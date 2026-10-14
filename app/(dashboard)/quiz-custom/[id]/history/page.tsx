@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Clock, Trophy, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Trophy, ChevronRight, History } from 'lucide-react';
+import { Button, Card, Skeleton, Spinner } from '@heroui/react';
 
 interface Attempt {
   id: string;
@@ -19,7 +20,6 @@ interface Attempt {
 }
 
 export default function QuizCustomHistoryPage() {
-  const router = useRouter();
   const params = useParams();
   const setId = params.id as string;
 
@@ -28,19 +28,30 @@ export default function QuizCustomHistoryPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadAttempts();
+    loadHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setId]);
 
-  const loadAttempts = async () => {
+  const loadHistory = async () => {
     try {
-      const res = await fetch(`/api/quiz-custom/attempts?setId=${setId}&limit=50`);
+      const res = await fetch(`/api/quiz-custom/attempts?setId=${setId}&limit=100`);
       const data = await res.json();
       setAttempts(data.data || []);
     } catch (err) {
-      setError('Gagal memuat riwayat');
+      setError('Failed to load history');
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   const formatTime = (seconds: number | null) => {
@@ -48,16 +59,6 @@ export default function QuizCustomHistoryPage() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString('id-ID', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   };
 
   const getScoreColor = (score: number) => {
@@ -68,94 +69,107 @@ export default function QuizCustomHistoryPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Memuat riwayat...</p>
-        </div>
+      <div className="flex min-h-screen items-center justify-center p-6">
+        <Card className="w-full max-w-2xl p-8">
+          <div className="mb-6 flex items-center gap-3">
+            <Spinner size="lg" color="accent" />
+            <p className="text-lg text-muted-foreground">Loading history…</p>
+          </div>
+          <div className="space-y-3">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} animationType="shimmer" className="h-16 w-full" />
+            ))}
+          </div>
+        </Card>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 text-center max-w-md">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Gagal Memuat</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
-          <Link href="/quiz-custom" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
-            <ArrowLeft className="w-4 h-4" /> Kembali
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <Card className="w-full max-w-md p-8 text-center">
+          <h2 className="mb-2 text-xl font-bold text-foreground">Failed to Load</h2>
+          <p className="mb-6 text-muted-foreground">{error}</p>
+          <Link href="/quiz-custom">
+            <Button variant="primary">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back
+            </Button>
           </Link>
-        </div>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 py-8 px-4">
-      <div className="max-w-3xl mx-auto">
+    <div className="py-8 px-4">
+      <div className="mx-auto max-w-3xl">
         {/* HEADER */}
         <div className="mb-6">
           <Link
             href="/quiz-custom"
-            className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4"
+            className="mb-4 inline-flex items-center gap-2 text-muted-foreground transition hover:text-foreground"
           >
-            <ArrowLeft className="w-4 h-4" /> Kembali ke Daftar Kuis
+            <ArrowLeft className="h-4 w-4" /> Back to Quizzes
           </Link>
 
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">📊 Riwayat Kuis</h1>
-            <p className="text-gray-500 dark:text-gray-400">
-              {attempts.length} kali main
+          <Card className="p-6">
+            <h1 className="mb-1 flex items-center gap-2 text-2xl font-bold text-foreground">
+              <History className="h-6 w-6 text-primary" />
+              Quiz History
+            </h1>
+            <p className="text-muted-foreground">
+              {attempts.length} {attempts.length === 1 ? 'attempt' : 'attempts'}
             </p>
-          </div>
+          </Card>
         </div>
 
         {attempts.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-12 text-center">
-            <Trophy className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Belum Ada Riwayat</h2>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">Mulai mainkan kuis ini untuk melihat riwayat di sini.</p>
-            <Link
-              href={`/quiz-custom/${setId}/play`}
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium transition"
-            >
-              Mulai Kuis
+          <Card className="p-12 text-center">
+            <Trophy className="mx-auto mb-4 h-16 w-16 text-muted" />
+            <h2 className="mb-2 text-xl font-bold text-foreground">No History Yet</h2>
+            <p className="mb-6 text-muted-foreground">
+              Play this quiz to see your history here.
+            </p>
+            <Link href={`/quiz-custom/${setId}/play`}>
+              <Button variant="primary" size="lg">
+                Start Quiz
+              </Button>
             </Link>
-          </div>
+          </Card>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <div className="divide-y divide-gray-100 dark:divide-gray-700">
+          <Card className="overflow-hidden">
+            <div className="divide-y divide-border">
               {attempts.map((attempt) => (
                 <Link
                   key={attempt.id}
                   href={`/quiz-custom/${setId}/result/${attempt.id}`}
-                  className="block p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition flex items-center justify-between gap-4"
+                  className="flex items-center justify-between gap-4 p-6 transition hover:bg-accent/30"
                 >
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className={`w-16 h-16 rounded-xl flex items-center justify-center text-2xl font-bold ${getScoreColor(attempt.score)}`}>
+                  <div className="flex min-w-0 flex-1 items-center gap-4">
+                    <div className={`flex h-16 w-16 items-center justify-center rounded-xl text-2xl font-bold ${getScoreColor(attempt.score)}`}>
                       {attempt.score}%
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="font-medium text-gray-900 dark:text-white truncate block">
-                          {attempt.setName || 'Kuis'}
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center gap-3">
+                        <span className="block truncate font-medium text-foreground">
+                          {attempt.setName || 'Quiz'}
                         </span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                        <span className="text-sm text-muted-foreground">
                           {formatDate(attempt.startedAt)}
                         </span>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                        <span>{attempt.correctAnswers} / {attempt.totalQuestions} benar</span>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>{attempt.correctAnswers} / {attempt.totalQuestions} correct</span>
                         <span>{formatTime(attempt.durationSeconds)}</span>
                       </div>
                     </div>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                  <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
                 </Link>
               ))}
             </div>
-          </div>
+          </Card>
         )}
       </div>
     </div>

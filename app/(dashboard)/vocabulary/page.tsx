@@ -11,6 +11,7 @@ import {
   Trash2,
   PlusCircle,
 } from 'lucide-react';
+import { Spinner } from '@heroui/react';
 // Jumlah kartu per halaman (pagination) - optimasi untuk UX
 const PAGE_SIZE = 20;
 const DEBOUNCE_MS = 400;
@@ -194,7 +195,7 @@ export default function VocabularyPage() {
   };
 
   const handleDelete = async (id: string, word: string) => {
-    if (!confirm(`Hapus kata "${word}" dari kamus?`)) return;
+    if (!confirm(`Delete the word "${word}" from the dictionary?`)) return;
     await fetch(`/api/vocabulary/${id}`, { method: 'DELETE' });
     fetchWords(0, false);
   };
@@ -224,17 +225,17 @@ export default function VocabularyPage() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">📚 Kamus Saya</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">📚 My Dictionary</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm">
-            Menampilkan {words.length} dari {totalCount} kata
-            {loading && <span className="ml-2 opacity-70">⏳ memuat...</span>}
+            Showing {words.length} of {totalCount} words
+            {loading && <Spinner size="sm" className="ml-2 inline-block align-middle" />}
           </p>
         </div>
         <button
           onClick={() => router.push('/vocabulary/add')}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm"
         >
-          <PlusCircle className="w-4 h-4" /> Tambah Kata
+          <PlusCircle className="w-4 h-4" /> Add Word
         </button>
       </div>
 
@@ -245,7 +246,7 @@ export default function VocabularyPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Cari kata, arti, atau definisi..."
+              placeholder="Search words, meanings, or definitions..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
@@ -263,7 +264,7 @@ export default function VocabularyPage() {
           <div className="flex flex-wrap items-center gap-4 mt-2">
             {/* Part of Speech */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Jenis:</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Part of speech:</span>
               {['noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction', 'interjection'].map(
                 (part) => (
                   <label
@@ -320,7 +321,7 @@ export default function VocabularyPage() {
                     : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                 }`}
               >
-                Semua
+                All
               </button>
               <button
                 onClick={() => setFilterStatus('unlearned')}
@@ -330,7 +331,7 @@ export default function VocabularyPage() {
                     : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                 }`}
               >
-                📖 Belum
+                📖 Not mastered
               </button>
               <button
                 onClick={() => setFilterStatus('learned')}
@@ -340,7 +341,7 @@ export default function VocabularyPage() {
                     : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                 }`}
               >
-                ✅ Sudah
+                ✅ Mastered
               </button>
             </div>
 
@@ -353,7 +354,7 @@ export default function VocabularyPage() {
                   onChange={(e) => setFilterTag(e.target.value)}
                   className="px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 >
-                  <option value="">Semua</option>
+                  <option value="">All</option>
                   {allTags.map((tag) => (
                     <option key={tag} value={tag}>
                       {tag}
@@ -379,7 +380,7 @@ export default function VocabularyPage() {
         </div>
       ) : words.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
-          <p className="text-gray-500 dark:text-gray-400 text-lg">Tidak ada kata yang cocok.</p>
+          <p className="text-gray-500 dark:text-gray-400 text-lg">No matching words.</p>
         </div>
       ) : (
         <>
@@ -410,7 +411,7 @@ export default function VocabularyPage() {
                 disabled={loadingMore}
                 className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition shadow-sm"
               >
-                {loadingMore ? 'Memuat...' : `Muat Lebih Banyak (${totalCount - words.length} kata lagi)`}
+                {loadingMore ? 'Loading...' : `Load More (${totalCount - words.length} more words)`}
               </button>
             </div>
           )}
@@ -454,7 +455,7 @@ const VocabularyCard = memo(function VocabularyCard({
             <button
               onClick={() => onSpeak(word.word)}
               className="p-1 text-gray-400 hover:text-blue-600 transition rounded-full hover:bg-blue-50 dark:hover:bg-blue-900"
-              title="Dengar"
+              title="Hear"
             >
               <Volume2 className="w-4 h-4" />
             </button>
@@ -493,7 +494,7 @@ const VocabularyCard = memo(function VocabularyCard({
             className={`p-1.5 text-gray-400 hover:text-yellow-500 transition ${
               favoriting.has(word.id) ? 'opacity-40 cursor-wait' : ''
             }`}
-            title={word.isFavorite ? 'Hapus favorit' : 'Tambah favorit'}
+            title={word.isFavorite ? 'Remove favorite' : 'Add favorite'}
           >
             {word.isFavorite ? '⭐' : '☆'}
           </button>
@@ -507,7 +508,7 @@ const VocabularyCard = memo(function VocabularyCard({
                 ? 'text-green-500'
                 : 'text-gray-400 hover:text-green-500'
             }`}
-            title={word.isLearned ? 'Tandai belum hafal' : 'Tandai sudah hafal'}
+            title={word.isLearned ? 'Mark as not mastered' : 'Mark as mastered'}
           >
             {word.isLearned ? '✅' : '📖'}
           </button>
@@ -521,7 +522,7 @@ const VocabularyCard = memo(function VocabularyCard({
           <button
             onClick={() => onDelete(word.id, word.word)}
             className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded transition"
-            title="Hapus"
+            title="Delete"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -531,11 +532,11 @@ const VocabularyCard = memo(function VocabularyCard({
       {/* Isi */}
       <div className="mt-3 space-y-1">
         <p className="text-gray-700 dark:text-gray-300">
-          <span className="font-medium text-gray-500 dark:text-gray-400">Arti:</span> {word.translation}
+          <span className="font-medium text-gray-500 dark:text-gray-400">Meaning:</span> {word.translation}
         </p>
         {word.definition && (
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            <span className="font-medium text-gray-500 dark:text-gray-400">Definisi:</span> {word.definition}
+            <span className="font-medium text-gray-500 dark:text-gray-400">Definition:</span> {word.definition}
           </p>
         )}
         {word.exampleSentence && (
@@ -561,7 +562,7 @@ const VocabularyCard = memo(function VocabularyCard({
       )}
       {word.forms && word.forms.length > 0 && (
         <div className="mt-3">
-          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Bentuk kata:</span>
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Word form:</span>
           <div className="mt-1 flex flex-wrap gap-1.5">
             {word.forms.map(f => (
               <span

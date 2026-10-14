@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     } = body;
 
     if (!name?.trim()) {
-      return NextResponse.json({ error: 'Nama kuis wajib diisi' }, { status: 400 });
+      return NextResponse.json({ error: 'Quiz name is required' }, { status: 400 });
     }
 
     const [newSet] = await db
@@ -63,6 +63,6 @@ export async function POST(request: Request) {
     return NextResponse.json(newSet);
   } catch (error) {
     console.error('Create quiz set error:', error);
-    return NextResponse.json({ error: 'Gagal membuat kuis' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create quiz' }, { status: 500 });
   }
 }

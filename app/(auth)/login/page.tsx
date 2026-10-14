@@ -5,27 +5,27 @@ import { AuthError } from 'next-auth';
 import { signIn } from '@/lib/auth';
 import LoginForm from './login-form';
 
-// Peta kode error NextAuth → pesan Indonesia yang mudah dipahami.
-// Kode ini juga muncul via ?error=... saat alur Google gagal.
+// Map NextAuth error codes → friendly English messages.
+// These also appear via ?error=... when the Google flow fails.
 const ERROR_MESSAGES: Record<string, string> = {
   Configuration:
-    'Gagal masuk: konfigurasi server belum lengkap (AUTH_SECRET / DATABASE_URL belum diatur di server).',
+    'Sign-in failed: server configuration is incomplete (AUTH_SECRET / DATABASE_URL not set).',
   MissingSecret:
-    'Gagal masuk: AUTH_SECRET belum diatur di server.',
-  AccessDenied: 'Akses login ditolak. Coba lagi.',
-  OAuthSignin: 'Gagal memulai login Google. Coba lagi.',
-  OAuthCallback: 'Gagal menyelesaikan login Google. Coba lagi.',
-  OAuthCreateAccount: 'Gagal membuat akun Google. Coba lagi.',
-  EmailCreateAccount: 'Gagal membuat akun. Coba lagi.',
-  CallbackRouteError: 'Terjadi masalah saat login Google. Coba lagi.',
+    'Sign-in failed: AUTH_SECRET is not set on the server.',
+  AccessDenied: 'Sign-in denied. Please try again.',
+  OAuthSignin: 'Could not start Google sign-in. Please try again.',
+  OAuthCallback: 'Could not complete Google sign-in. Please try again.',
+  OAuthCreateAccount: 'Could not create your Google account. Please try again.',
+  EmailCreateAccount: 'Could not create your account. Please try again.',
+  CallbackRouteError: 'Something went wrong during Google sign-in. Please try again.',
   OAuthAccountNotLinked:
-    'Email Google ini sudah terhubung dengan akun lain. Gunakan metode login yang sesuai.',
-  CredentialsSignin: 'Email atau password salah.',
+    'This Google email is linked to another account. Use the matching sign-in method.',
+  CredentialsSignin: 'Incorrect email or password.',
 };
 
 function getErrorMessage(code?: string): string | null {
   if (!code) return null;
-  return ERROR_MESSAGES[code] || 'Login gagal. Coba lagi.';
+  return ERROR_MESSAGES[code] || 'Sign-in failed. Please try again.';
 }
 
 export default async function LoginPage({
@@ -41,11 +41,11 @@ export default async function LoginPage({
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50/50 dark:from-[#131314] dark:via-[#151517] dark:to-[#18181a] px-4">
       <div className="max-w-md w-full space-y-8 bg-white dark:bg-[#1c1c1e] p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Selamat Datang Kembali</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome Back</h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Belum punya akun?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-300 dark:hover:text-blue-200">
-              Daftar di sini
+              Sign up here
             </Link>
           </p>
         </div>
@@ -97,7 +97,7 @@ export default async function LoginPage({
                     d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
                   />
                 </svg>
-                Login dengan Google
+                Sign in with Google
               </Button>
             </form>
 
@@ -106,7 +106,7 @@ export default async function LoginPage({
                 <div className="w-full border-t border-gray-300 dark:border-white/10"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-[#1c1c1e] text-gray-500 dark:text-gray-400">atau</span>
+                <span className="px-2 bg-white dark:bg-[#1c1c1e] text-gray-500 dark:text-gray-400">or</span>
               </div>
             </div>
           </>

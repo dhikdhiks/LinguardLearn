@@ -32,7 +32,7 @@ export default function BatchImportPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || 'Gagal import');
+        alert(data.error || 'Import failed');
         return;
       }
       setResult({ success: data.imported, failed: data.failed ?? [] });
@@ -57,10 +57,10 @@ export default function BatchImportPage() {
         if (Array.isArray(data) && data.length > 0) {
           setPreviewData(data);
         } else {
-          alert('File harus berupa array of objects.');
+          alert('File must be an array of objects.');
         }
       } catch {
-        alert('File JSON tidak valid.');
+        alert('Invalid JSON file.');
       }
     };
     reader.readAsText(file);
@@ -80,7 +80,7 @@ export default function BatchImportPage() {
         setResult({ success: data.imported, failed: [] });
         setPreviewData([]); // clear preview
       } else {
-        alert(data.error || 'Gagal import JSON');
+        alert(data.error || 'JSON import failed');
       }
     } catch {
       alert('Error import JSON');
@@ -98,13 +98,13 @@ export default function BatchImportPage() {
         onClick={() => router.push('/vocabulary')}
         className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
       >
-        <ArrowLeft className="w-4 h-4" /> Kembali ke Kamus
+        <ArrowLeft className="w-4 h-4" /> Back to Dictionary
       </button>
 
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">📋 Import Batch</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Masukkan satu kata per baris, atau upload file JSON.
+          Enter one word per line, or upload a JSON file.
         </p>
 
         {/* ===== TEKS AREA ===== */}
@@ -121,7 +121,7 @@ export default function BatchImportPage() {
           className="mt-4 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition w-full"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-          {loading ? 'Memproses...' : 'Import dari Teks'}
+          {loading ? 'Processing...' : 'Import from Text'}
         </button>
 
         <hr className="my-6 border-gray-200 dark:border-gray-700" />
@@ -140,7 +140,7 @@ export default function BatchImportPage() {
           {previewData.length > 0 && (
             <div className="mt-4">
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                Preview: {previewData.length} kata siap diimport
+                Preview: {previewData.length} words ready to import
               </p>
               <button
                 onClick={handleImportJson}
@@ -157,11 +157,11 @@ export default function BatchImportPage() {
         {result && (
           <div className="mt-4 p-4 rounded-lg border dark:border-gray-600">
             <p className="font-medium text-gray-900 dark:text-white">
-              ✅ Berhasil: {result.success} kata
+              ✅ Success: {result.success} words
             </p>
             {result.failed.length > 0 && (
               <div className="mt-2">
-                <p className="text-red-600 font-medium">❌ Gagal: {result.failed.length} kata</p>
+                <p className="text-red-600 font-medium">❌ Failed: {result.failed.length} words</p>
                 <ul className="text-sm text-red-500 list-disc ml-4">
                   {result.failed.map((f, i) => (
                     <li key={i}>{f}</li>

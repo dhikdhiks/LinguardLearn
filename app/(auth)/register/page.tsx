@@ -10,11 +10,11 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50/50 dark:from-[#131314] dark:via-[#151517] dark:to-[#18181a] px-4">
       <div className="max-w-md w-full space-y-8 bg-white dark:bg-[#1c1c1e] p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Buat Akun Baru</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Create Your Account</h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Sudah punya akun?{' '}
+            Already have an account?{' '}
             <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-300 dark:hover:text-blue-200">
-              Masuk di sini
+              Sign in here
             </Link>
           </p>
         </div>
@@ -52,7 +52,7 @@ export default function RegisterPage() {
                     d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
                   />
                 </svg>
-                Daftar dengan Google
+                Sign up with Google
               </Button>
             </form>
 
@@ -61,7 +61,7 @@ export default function RegisterPage() {
                 <div className="w-full border-t border-gray-300 dark:border-white/10"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-[#1c1c1e] text-gray-500 dark:text-gray-400">atau</span>
+                <span className="px-2 bg-white dark:bg-[#1c1c1e] text-gray-500 dark:text-gray-400">or</span>
               </div>
             </div>
           </>

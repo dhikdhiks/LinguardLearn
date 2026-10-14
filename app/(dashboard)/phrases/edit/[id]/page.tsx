@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { Skeleton } from '@heroui/react';
 
 export default function EditPhrasePage() {
   const router = useRouter();
@@ -39,7 +40,7 @@ export default function EditPhrasePage() {
         });
         setLoading(false);
       })
-      .catch(() => setError('Gagal memuat data'));
+      .catch(() => setError('Failed to load data'));
   }, [id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -65,31 +66,40 @@ export default function EditPhrasePage() {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || 'Gagal update');
+        setError(data.error || 'Update failed');
         setSaving(false);
         return;
       }
       router.push('/phrases');
     } catch {
-      setError('Terjadi kesalahan');
+      setError('Something went wrong');
       setSaving(false);
     }
   };
 
-  if (loading) return <div className="text-center py-12">⏳ Memuat...</div>;
+  if (loading)
+    return (
+      <div className="max-w-2xl mx-auto space-y-4 py-6">
+        <Skeleton animationType="shimmer" className="h-6 w-32" />
+        <Skeleton animationType="shimmer" className="h-10 w-full" />
+        <Skeleton animationType="pulse" className="h-10 w-full" />
+        <Skeleton animationType="pulse" className="h-10 w-2/3" />
+        <Skeleton animationType="shimmer" className="h-10 w-28" />
+      </div>
+    );
 
   return (
     <div className="max-w-2xl mx-auto">
       <button onClick={() => router.push('/phrases')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4">
-        <ArrowLeft className="w-4 h-4" /> Kembali
+        <ArrowLeft className="w-4 h-4" /> Back
       </button>
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">✏️ Edit Kalimat</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">✏️ Edit Phrase</h1>
         {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Sama seperti form add, dengan value dari state */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Kalimat *</label>
+            <label className="block text-sm font-medium text-gray-700">Phrase *</label>
             <input
               type="text"
               name="phrase"
@@ -100,7 +110,7 @@ export default function EditPhrasePage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Terjemahan *</label>
+            <label className="block text-sm font-medium text-gray-700">Translation *</label>
             <input
               type="text"
               name="translation"
@@ -146,7 +156,7 @@ export default function EditPhrasePage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Catatan</label>
+            <label className="block text-sm font-medium text-gray-700">Notes</label>
             <textarea
               name="notes"
               rows={2}
@@ -163,7 +173,7 @@ export default function EditPhrasePage() {
                 onChange={(e) => setForm({ ...form, isFavorite: e.target.checked })}
                 className="h-4 w-4 text-blue-600 rounded"
               />
-              <span className="text-sm text-gray-700">Favorit</span>
+              <span className="text-sm text-gray-700">Favorite</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -172,7 +182,7 @@ export default function EditPhrasePage() {
                 onChange={(e) => setForm({ ...form, isLearned: e.target.checked })}
                 className="h-4 w-4 text-blue-600 rounded"
               />
-              <span className="text-sm text-gray-700">Sudah Dihafal</span>
+              <span className="text-sm text-gray-700">Mastered</span>
             </label>
           </div>
           <button
@@ -181,7 +191,7 @@ export default function EditPhrasePage() {
             className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2.5 rounded-lg transition"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
+            {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
       </div>

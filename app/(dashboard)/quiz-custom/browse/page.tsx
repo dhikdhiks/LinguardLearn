@@ -1,9 +1,24 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Play, Users, BookOpen, MessageSquare, Hash, TrendingUp } from 'lucide-react';
+import {
+  ArrowLeft,
+  Play,
+  Users,
+  BookOpen,
+  MessageSquare,
+  Hash,
+  TrendingUp,
+  Globe,
+  User,
+  Calendar,
+  Keyboard,
+  ListChecks,
+  Shuffle,
+  PlusCircle,
+} from 'lucide-react';
+import { Button, Card, Chip, Skeleton, Spinner } from '@heroui/react';
 
 interface PublicQuiz {
   id: string;
@@ -23,13 +38,11 @@ interface PublicQuiz {
 }
 
 export default function BrowsePublicQuizzesPage() {
-  const router = useRouter();
   const [quizzes, setQuizzes] = useState<PublicQuiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
-  const [myCreatedCount, setMyCreatedCount] = useState(0);
 
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 20;
@@ -43,7 +56,7 @@ export default function BrowsePublicQuizzesPage() {
       const offset = (pageToFetch - 1) * PAGE_SIZE;
       const res = await fetch(`/api/quiz-custom/sets/public?limit=${PAGE_SIZE}&offset=${offset}`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal memuat kuis publik');
+      if (!res.ok) throw new Error(data.error || 'Failed to load public quizzes');
 
       if (append) {
         setQuizzes((prev) => [...prev, ...data.data]);
@@ -56,7 +69,7 @@ export default function BrowsePublicQuizzesPage() {
     } catch (error) {
       console.error('Failed to fetch public quizzes:', error);
       if (!append) {
-        alert('Gagal memuat kuis publik. Silakan coba lagi.');
+        alert('Failed to load public quizzes. Please try again.');
       }
     } finally {
       setLoadingMore(false);
@@ -66,6 +79,7 @@ export default function BrowsePublicQuizzesPage() {
   useEffect(() => {
     setLoading(true);
     fetchQuizzes(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadMore = () => {
@@ -74,17 +88,17 @@ export default function BrowsePublicQuizzesPage() {
 
   const getContentTypeIcon = (type: string) => {
     switch (type) {
-      case 'vocabulary': return <BookOpen className="w-4 h-4" />;
-      case 'phrases': return <MessageSquare className="w-4 h-4" />;
-      default: return <Hash className="w-4 h-4" />;
+      case 'vocabulary': return <BookOpen className="h-4 w-4" />;
+      case 'phrases': return <MessageSquare className="h-4 w-4" />;
+      default: return <Hash className="h-4 w-4" />;
     }
   };
 
   const getContentTypeLabel = (type: string) => {
     switch (type) {
-      case 'vocabulary': return '📚 Kosakata';
-      case 'phrases': return '💬 Kalimat';
-      case 'mixed': return '🔀 Campuran';
+      case 'vocabulary': return 'Vocabulary';
+      case 'phrases': return 'Phrases';
+      case 'mixed': return 'Mixed';
       default: return type;
     }
   };
@@ -93,22 +107,30 @@ export default function BrowsePublicQuizzesPage() {
     switch (dir) {
       case 'source_to_target': return 'EN → ID';
       case 'target_to_source': return 'ID → EN';
-      case 'mixed': return 'Campur';
+      case 'mixed': return 'Mixed';
       default: return dir;
     }
   };
 
   const getQuestionTypeLabel = (type: string) => {
     switch (type) {
-      case 'type_in': return '⌨️ Input Manual';
-      case 'multiple_choice': return '☑️ Pilihan Ganda';
-      case 'mixed': return '🔀 Campur';
+      case 'type_in': return 'Type In';
+      case 'multiple_choice': return 'Multiple Choice';
+      case 'mixed': return 'Mixed';
       default: return type;
     }
   };
 
+  const getQuestionTypeIcon = (type: string) => {
+    switch (type) {
+      case 'type_in': return <Keyboard className="h-4 w-4" />;
+      case 'multiple_choice': return <ListChecks className="h-4 w-4" />;
+      default: return <Shuffle className="h-4 w-4" />;
+    }
+  };
+
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('id-ID', {
+    return new Date(dateStr).toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -121,131 +143,147 @@ export default function BrowsePublicQuizzesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 py-8 px-4">
-      <div className="max-w-5xl mx-auto">
+    <div className="py-8 px-4">
+      <div className="mx-auto max-w-5xl">
         {/* HEADER */}
         <div className="mb-6">
           <Link
             href="/quiz-custom"
-            className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4"
+            className="mb-4 inline-flex items-center gap-2 text-muted-foreground transition hover:text-foreground"
           >
-            <ArrowLeft className="w-4 h-4" /> Kembali ke Kuis
+            <ArrowLeft className="h-4 w-4" /> Back to Quizzes
           </Link>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-              🌍 JELAJAH KUIS PUBLIK
+          <Card className="p-6">
+            <h1 className="mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-3xl font-bold text-transparent">
+              Browse Public Quizzes
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Temukan kuis buatan member lain yang sudah dipublikasikan. Klik "Mulai" untuk langsung mengerjakan!
+            <p className="text-muted-foreground">
+              Discover quizzes published by other learners. Hit &quot;Start&quot; to play right away!
             </p>
-          </div>
+          </Card>
         </div>
 
         {loading && quizzes.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Memuat kuis publik...</p>
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i} className="p-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="space-y-2">
+                    <Skeleton animationType="shimmer" className="h-7 w-64" />
+                    <Skeleton animationType="pulse" className="h-4 w-96" />
+                  </div>
+                  <Skeleton animationType="pulse" className="h-10 w-28" />
+                </div>
+                <div className="flex gap-4">
+                  <Skeleton animationType="pulse" className="h-4 w-24" />
+                  <Skeleton animationType="pulse" className="h-4 w-24" />
+                  <Skeleton animationType="pulse" className="h-4 w-24" />
+                </div>
+              </Card>
+            ))}
           </div>
         ) : quizzes.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-12 text-center">
-            <Users className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Belum Ada Kuis Publik</h2>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">
-              Saat ini belum ada kuis yang dipublikasikan oleh member lain.
+          <Card className="p-12 text-center">
+            <Users className="mx-auto mb-4 h-16 w-16 text-muted" />
+            <h2 className="mb-2 text-xl font-bold text-foreground">No Public Quizzes Yet</h2>
+            <p className="mb-6 text-muted-foreground">
+              There are no quizzes published by other members yet.
             </p>
-            <Link
-              href="/quiz-custom/create"
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium transition"
-            >
-              ➕ Buat Kuis & Publikasikan
+            <Link href="/quiz-custom/create">
+              <Button variant="primary">
+                <PlusCircle className="mr-1 h-4 w-4" /> Create &amp; Publish a Quiz
+              </Button>
             </Link>
-          </div>
+          </Card>
         ) : (
           <>
-            <div className="space-y-4 mb-6">
+            <div className="mb-6 space-y-4">
               {quizzes.map((quiz) => (
-                <div
+                <Card
                   key={quiz.id}
-                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-shadow"
+                  className="overflow-hidden transition-shadow hover:shadow-xl"
                 >
                   <div className="p-6">
-                    <div className="flex items-start justify-between gap-4 mb-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 flex-wrap mb-2">
-                          <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">
+                    <div className="mb-4 flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-2 flex flex-wrap items-center gap-3">
+                          <h2 className="truncate text-xl font-bold text-foreground">
                             {quiz.name}
                           </h2>
-                          <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                            🌐 Publik
-                          </span>
+                          <Chip size="sm" variant="soft" color="accent">
+                            <Chip.Label className="flex items-center gap-1">
+                              <Globe className="h-3 w-3" />
+                              Public
+                            </Chip.Label>
+                          </Chip>
                         </div>
                         {quiz.description && (
-                          <p className="text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                          <p className="mb-3 line-clamp-2 text-muted-foreground">
                             {quiz.description}
                           </p>
                         )}
-                        <div className="flex flex-wrap items-center gap-3 text-sm">
-                          <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1.5">
                             {getContentTypeIcon(quiz.contentType)}
-                            <span>{getContentTypeLabel(quiz.contentType)}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-                            <span className="w-4 h-4 flex items-center justify-center">↔️</span>
-                            <span>{getDirectionLabel(quiz.direction)}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-                            <span className="w-4 h-4 flex items-center justify-center">❓</span>
-                            <span>{getQuestionTypeLabel(quiz.questionType)}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-                            <TrendingUp className="w-4 h-4" />
-                            <span>{formatCount(quiz.playedCount)} kali dimainkan</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-                            <span className="w-4 h-4 flex items-center justify-center">👤</span>
-                            <span>
-                              {quiz.creatorName === 'Anda' ? 'Dibuat oleh Anda' : `Dibuat oleh ${quiz.creatorName}`}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-                            <span className="w-4 h-4 flex items-center justify-center">📅</span>
-                            <span>{formatDate(quiz.createdAt)}</span>
-                          </div>
+                            {getContentTypeLabel(quiz.contentType)}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <span className="flex h-4 w-4 items-center justify-center">↔</span>
+                            {getDirectionLabel(quiz.direction)}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            {getQuestionTypeIcon(quiz.questionType)}
+                            {getQuestionTypeLabel(quiz.questionType)}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <TrendingUp className="h-4 w-4" />
+                            {formatCount(quiz.playedCount)} plays
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <User className="h-4 w-4" />
+                            {quiz.creatorName === 'You'
+                              ? 'Created by you'
+                              : `Created by ${quiz.creatorName}`}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <Calendar className="h-4 w-4" />
+                            {formatDate(quiz.createdAt)}
+                          </span>
                         </div>
                       </div>
-                      <div className="flex-shrink-0">
-                        <Link
-                          href={`/quiz-custom/${quiz.id}/play`}
-                          className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-medium transition shadow-sm"
-                        >
-                          <Play className="w-4 h-4" />
-                          Mulai
+                      <div className="shrink-0">
+                        <Link href={`/quiz-custom/${quiz.id}/play`}>
+                          <Button variant="primary" className="rounded-xl shadow-sm">
+                            <Play className="mr-1 h-4 w-4" />
+                            Start
+                          </Button>
                         </Link>
                       </div>
                     </div>
                   </div>
-                </div>
+                </Card>
               ))}
             </div>
 
             {hasMore && (
               <div className="text-center">
-                <button
-                  onClick={loadMore}
-                  disabled={loadingMore}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium transition disabled:opacity-50"
+                <Button
+                  variant="outline"
+                  onPress={loadMore}
+                  isDisabled={loadingMore}
+                  className="px-6 py-3"
                 >
                   {loadingMore ? (
-                    <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    <Spinner size="sm" color="accent" />
                   ) : (
-                    'Muat Lebih Banyak'
+                    'Load More'
                   )}
-                </button>
+                </Button>
               </div>
             )}
 
-            <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
-              Menampilkan {quizzes.length} dari {total} kuis publik
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              Showing {quizzes.length} of {total} public quizzes
             </p>
           </>
         )}

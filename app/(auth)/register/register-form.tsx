@@ -14,7 +14,7 @@ function SubmitButton() {
       disabled={pending}
       className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60"
     >
-      {pending ? 'Memproses...' : 'Daftar dengan Email'}
+      {pending ? 'Creating account...' : 'Sign up with Email'}
     </Button>
   );
 }
@@ -47,7 +47,7 @@ export default function RegisterForm() {
       <div className="space-y-4">
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Nama Lengkap
+            Full Name
           </label>
           <input
             id="name"
@@ -62,7 +62,7 @@ export default function RegisterForm() {
         </div>
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Alamat Email
+            Email Address
           </label>
           <input
             id="email"
@@ -71,12 +71,12 @@ export default function RegisterForm() {
             required
             autoComplete="email"
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:border-white/15 dark:bg-[#26272a] dark:text-white dark:placeholder-gray-500"
-            placeholder="contoh@email.com"
+            placeholder="you@example.com"
           />
         </div>
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Kata Sandi
+            Password
           </label>
           <input
             id="password"
@@ -86,12 +86,12 @@ export default function RegisterForm() {
             autoComplete="new-password"
             minLength={8}
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:border-white/15 dark:bg-[#26272a] dark:text-white dark:placeholder-gray-500"
-            placeholder="Minimal 8 karakter"
+            placeholder="At least 8 characters"
           />
         </div>
         <div>
           <label htmlFor="confirm" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Konfirmasi Kata Sandi
+            Confirm Password
           </label>
           <input
             id="confirm"
@@ -101,7 +101,7 @@ export default function RegisterForm() {
             autoComplete="new-password"
             minLength={8}
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:border-white/15 dark:bg-[#26272a] dark:text-white dark:placeholder-gray-500"
-            placeholder="Ulangi kata sandi"
+            placeholder="Repeat your password"
           />
         </div>
       </div>

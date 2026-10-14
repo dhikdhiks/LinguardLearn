@@ -22,7 +22,7 @@ export async function DELETE(
     .limit(1);
 
   if (!set) {
-    return NextResponse.json({ error: 'Kuis tidak ditemukan' }, { status: 404 });
+    return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
   }
 
   await db
@@ -51,7 +51,7 @@ export async function PUT(
     .limit(1);
 
   if (!set) {
-    return NextResponse.json({ error: 'Kuis tidak ditemukan' }, { status: 404 });
+    return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
   }
 
   try {
@@ -64,7 +64,7 @@ export async function PUT(
     if (customAnswer !== undefined) updateData.customAnswer = customAnswer?.trim() || null;
 
     if (Object.keys(updateData).length === 0) {
-      return NextResponse.json({ error: 'Tidak ada data untuk diupdate' }, { status: 400 });
+      return NextResponse.json({ error: 'No data to update' }, { status: 400 });
     }
 
     const [updated] = await db
@@ -74,12 +74,12 @@ export async function PUT(
       .returning();
 
     if (!updated) {
-      return NextResponse.json({ error: 'Item tidak ditemukan' }, { status: 404 });
+      return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
 
     return NextResponse.json(updated);
   } catch (error) {
     console.error('Update quiz item error:', error);
-    return NextResponse.json({ error: 'Gagal mengupdate item' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update item' }, { status: 500 });
   }
 }

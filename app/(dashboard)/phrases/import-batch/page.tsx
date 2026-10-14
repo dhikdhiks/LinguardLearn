@@ -28,13 +28,13 @@ export default function ImportPhrasesPage() {
       // Format: "phrase|translation" atau "phrase,translation"
       const parts = line.includes('|') ? line.split('|') : line.split(',');
       if (parts.length < 2) {
-        failed.push(`${line} (format salah)`);
+        failed.push(`${line} (invalid format)`);
         continue;
       }
       const phrase = parts[0].trim();
       const translation = parts.slice(1).join(',').trim();
       if (!phrase || !translation) {
-        failed.push(`${line} (format salah)`);
+        failed.push(`${line} (invalid format)`);
         continue;
       }
       items.push({ phrase, translation });
@@ -57,7 +57,7 @@ export default function ImportPhrasesPage() {
         setResult({ success: data.imported, failed });
         setPreviewData([]);
       } else {
-        alert(data.error || 'Gagal import');
+        alert(data.error || 'Import failed');
         setResult({ success: 0, failed });
       }
     } catch {
@@ -78,10 +78,10 @@ export default function ImportPhrasesPage() {
         if (Array.isArray(data) && data.length > 0) {
           setPreviewData(data);
         } else {
-          alert('File harus berupa array of objects.');
+          alert('File must be an array of objects.');
         }
       } catch {
-        alert('File JSON tidak valid.');
+        alert('Invalid JSON file.');
       }
     };
     reader.readAsText(file);
@@ -101,7 +101,7 @@ export default function ImportPhrasesPage() {
         setResult({ success: data.imported, failed: [] });
         setPreviewData([]);
       } else {
-        alert(data.error || 'Gagal import JSON');
+        alert(data.error || 'JSON import failed');
       }
     } catch {
       alert('Error import JSON');
@@ -116,14 +116,14 @@ export default function ImportPhrasesPage() {
         onClick={() => router.push('/phrases')}
         className="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white mb-4"
       >
-        <ArrowLeft className="w-4 h-4" /> Kembali ke Kalimat
+        <ArrowLeft className="w-4 h-4" /> Back to Phrases
       </button>
 
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">📥 Impor Phrases</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Masukkan satu kalimat per baris dengan format: <strong>phrase|translation</strong> atau <strong>phrase,translation</strong>.
-          Atau upload file JSON.
+          Enter one phrase per line in the format: <strong>phrase|translation</strong> or <strong>phrase,translation</strong>.
+          Or upload a JSON file.
         </p>
 
         <textarea
@@ -139,7 +139,7 @@ export default function ImportPhrasesPage() {
           className="mt-4 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition w-full"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-          {loading ? 'Memproses...' : 'Import dari Teks'}
+          {loading ? 'Processing...' : 'Import from Text'}
         </button>
 
         <hr className="my-6 border-gray-200 dark:border-gray-700" />
@@ -154,7 +154,7 @@ export default function ImportPhrasesPage() {
           />
           {previewData.length > 0 && (
             <div className="mt-4">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Preview: {previewData.length} kalimat siap diimport</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Preview: {previewData.length} phrases ready to import</p>
               <button
                 onClick={handleImportJson}
                 disabled={jsonLoading}
@@ -168,10 +168,10 @@ export default function ImportPhrasesPage() {
 
         {result && (
           <div className="mt-4 p-4 rounded-lg border dark:border-gray-600">
-            <p className="font-medium text-gray-900 dark:text-white">✅ Berhasil: {result.success} kalimat</p>
+            <p className="font-medium text-gray-900 dark:text-white">✅ Success: {result.success} phrases</p>
             {result.failed.length > 0 && (
               <div className="mt-2">
-                <p className="text-red-600 font-medium">❌ Gagal: {result.failed.length} kalimat</p>
+                <p className="text-red-600 font-medium">❌ Failed: {result.failed.length} phrases</p>
                 <ul className="text-sm text-red-500 list-disc ml-4">
                   {result.failed.map((f, i) => <li key={i}>{f}</li>)}
                 </ul>

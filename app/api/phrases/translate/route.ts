@@ -109,7 +109,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Waktu minta habis, coba lagi.' }, { status: 504 });
       }
       console.error('Translate error:', error);
-      return NextResponse.json({ error: 'Gagal menerjemahkan' }, { status: 500 });
+      return NextResponse.json({ error: 'Translation failed' }, { status: 500 });
     }
   });
 }

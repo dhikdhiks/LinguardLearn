@@ -285,11 +285,11 @@ export default function QuizCustomCreatePage() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      alert('Nama kuis wajib diisi');
+      alert('Quiz name is required');
       return;
     }
     if (items.length === 0) {
-      alert('Tambahkan minimal 1 soal');
+      alert('Add at least 1 question');
       return;
     }
 
@@ -315,14 +315,14 @@ export default function QuizCustomCreatePage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error('Gagal memperbarui kuis');
+        if (!res.ok) throw new Error('Failed to update quiz');
       } else {
         const res = await fetch('/api/quiz-custom/sets', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error('Gagal membuat kuis');
+        if (!res.ok) throw new Error('Failed to create quiz');
         const data = await res.json();
         setId = data.id;
       }
@@ -341,22 +341,22 @@ export default function QuizCustomCreatePage() {
             })),
           }),
         });
-        if (!res.ok) throw new Error('Gagal menyimpan soal');
+        if (!res.ok) throw new Error('Failed to save questions');
       }
 
       router.push('/quiz-custom');
     } catch (error) {
       console.error('Save failed:', error);
-      alert(error instanceof Error ? error.message : 'Gagal menyimpan kuis');
+      alert(error instanceof Error ? error.message : 'Failed to save quiz');
     } finally {
       setSaving(false);
     }
   };
 
   const getTypeLabel = (type: string) => {
-    if (type === 'vocabulary') return 'Kata';
-    if (type === 'phrases') return 'Kalimat';
-    return 'Kata/Kalimat';
+    if (type === 'vocabulary') return 'Word';
+    if (type === 'phrases') return 'Phrase';
+    return 'Word/Phrase';
   };
 
   // Available items yang belum ditambahkan
@@ -373,14 +373,14 @@ export default function QuizCustomCreatePage() {
           href="/quiz-custom"
           className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
         >
-          <ArrowLeft className="w-4 h-4" /> Kembali
+          <ArrowLeft className="w-4 h-4" /> Back
         </Link>
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {isEditing ? '✏️ Edit Kuis' : '➕ Buat Kuis Baru'}
+            {isEditing ? 'Edit Quiz' : 'Create New Quiz'}
           </h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm">
-            Pilih kata/kalimat bebas dari database, lalu atur pengaturan kuis
+            Pick words/phrases from the database, then configure your quiz settings
           </p>
         </div>
       </div>
@@ -393,21 +393,21 @@ export default function QuizCustomCreatePage() {
             <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">📝 Info Dasar</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nama Kuis *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Quiz Name *</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Contoh: Review Mingguan - Kata Kerja"
+                  placeholder="e.g. Weekly Review - Verbs"
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deskripsi</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Opsional: catatan tentang kuis ini..."
+                  placeholder="Optional: notes about this quiz..."
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 />
@@ -417,10 +417,10 @@ export default function QuizCustomCreatePage() {
 
           {/* Content Settings */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">⚙️ Pengaturan Konten</h2>
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Content Settings</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipe Konten</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Content Type</label>
                 <div className="flex gap-2">
                   {(['vocabulary', 'phrases', 'mixed'] as const).map((type) => (
                     <button
@@ -432,14 +432,14 @@ export default function QuizCustomCreatePage() {
                           : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                       }`}
                     >
-                      {type === 'vocabulary' ? '📚 Kosakata' : type === 'phrases' ? '💬 Kalimat' : '🔀 Campuran'}
+                      {type === 'vocabulary' ? 'Vocabulary' : type === 'phrases' ? 'Phrases' : 'Mixed'}
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Arah Soal</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Question Direction</label>
                 <div className="flex gap-2">
                   {(['source_to_target', 'target_to_source', 'mixed'] as const).map((dir) => (
                     <button
@@ -456,14 +456,14 @@ export default function QuizCustomCreatePage() {
                   ))}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {direction === 'source_to_target' && 'Soal: English, Jawab: Indonesia'}
-                  {direction === 'target_to_source' && 'Soal: Indonesia, Jawab: English (type-in)'}
-                  {direction === 'mixed' && 'Acak arah soal'}
+                  {direction === 'source_to_target' && 'Question: English, Answer: Indonesian'}
+                  {direction === 'target_to_source' && 'Question: Indonesian, Answer: English (type-in)'}
+                  {direction === 'mixed' && 'Randomize question direction'}
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipe Pertanyaan</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Question Type</label>
                 <div className="flex gap-2">
                   {(['type_in', 'multiple_choice', 'mixed'] as const).map((type) => (
                     <button
@@ -475,7 +475,7 @@ export default function QuizCustomCreatePage() {
                           : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                       }`}
                     >
-                      {type === 'type_in' ? '⌨️ Input Manual' : type === 'multiple_choice' ? '☑️ Pilihan Ganda' : '🔀 Campur'}
+                      {type === 'type_in' ? 'Type In' : type === 'multiple_choice' ? 'Multiple Choice' : 'Mixed'}
                     </button>
                   ))}
                 </div>
@@ -483,7 +483,7 @@ export default function QuizCustomCreatePage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Soal per Sesi (0 = semua)
+                  Questions per Session (0 = all)
                 </label>
                 <input
                   type="number"
@@ -502,7 +502,7 @@ export default function QuizCustomCreatePage() {
                     onChange={(e) => setShuffleQuestions(e.target.checked)}
                     className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Acak urutan soal</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Shuffle question order</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -511,7 +511,7 @@ export default function QuizCustomCreatePage() {
                     onChange={(e) => setShuffleOptions(e.target.checked)}
                     className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Acak opsi (MC)</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Shuffle options (MC)</span>
                 </label>
               </div>
 
@@ -522,9 +522,9 @@ export default function QuizCustomCreatePage() {
                   onChange={(e) => setIsPublic(e.target.checked)}
                   className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Publik — user lain bisa lihat & kerjakan kuis ini</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Public — other users can view &amp; play this quiz</span>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Jika dicentang, kuis akan muncul di halaman JELAJAH KUIS PUBLIK dan siapa saja bisa memainkannya.
+                  If checked, the quiz will appear on the Public Quizzes page and anyone can play it.
                 </p>
               </label>
             </div>
@@ -537,7 +537,7 @@ export default function QuizCustomCreatePage() {
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 rounded-lg transition shadow-sm flex items-center justify-center gap-2"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {saving ? 'Menyimpan...' : isEditing ? 'Update Kuis' : 'Buat Kuis'}
+            {saving ? 'Saving...' : isEditing ? 'Update Quiz' : 'Create Quiz'}
           </button>
         </div>
 
@@ -547,19 +547,19 @@ export default function QuizCustomCreatePage() {
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
-                📋 Soal Terpilih ({items.length})
+                📋 Selected Questions ({items.length})
               </h2>
               {items.length > 0 && (
                 <button onClick={() => setItems([])} className="text-sm text-red-600 hover:underline">
-                  Hapus Semua
+                  Remove All
                 </button>
               )}
             </div>
 
             {items.length === 0 ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
-                <p className="mb-2">Belum ada soal</p>
-                <p className="text-sm">Centang kata/kalimat di daftar bawah, lalu klik “Tambah Terpilih”</p>
+                <p className="mb-2">No questions yet</p>
+                <p className="text-sm">Check words/phrases in the list below, then click &quot;Add Selected&quot;</p>
               </div>
             ) : (
               <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -603,20 +603,20 @@ export default function QuizCustomCreatePage() {
                             </span>
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            Jawaban: <span className="font-medium">{item.customAnswer || targetText}</span>
+                            Answer: <span className="font-medium">{item.customAnswer || targetText}</span>
                           </div>
                           {/* Custom fields */}
                           <div className="mt-2 space-y-1">
                             <input
                               type="text"
-                              placeholder="Custom soal (opsional)"
+                              placeholder="Custom question (optional)"
                               value={item.customQuestion || ''}
                               onChange={(e) => updateCustomField(item.id, 'customQuestion', e.target.value)}
                               className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded focus:ring-2 focus:ring-blue-500 outline-none"
                             />
                             <input
                               type="text"
-                              placeholder="Custom jawaban (opsional)"
+                              placeholder="Custom answer (optional)"
                               value={item.customAnswer || ''}
                               onChange={(e) => updateCustomField(item.id, 'customAnswer', e.target.value)}
                               className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded focus:ring-2 focus:ring-blue-500 outline-none"
@@ -626,7 +626,7 @@ export default function QuizCustomCreatePage() {
                         <button
                           onClick={() => removeItem(item.id)}
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded transition"
-                          title="Hapus soal"
+                          title="Remove question"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -642,7 +642,7 @@ export default function QuizCustomCreatePage() {
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
-                📚 Pilih {getTypeLabel(contentType)}{' '}
+                📚 Select {getTypeLabel(contentType)}{' '}
                 <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
                   (Total: {totalAvailable})
                 </span>
@@ -653,7 +653,7 @@ export default function QuizCustomCreatePage() {
                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white text-sm font-medium px-3 py-2 rounded-lg transition"
               >
                 <PlusCircle className="w-4 h-4" />
-                Tambah Terpilih ({selectedCount})
+                Add Selected ({selectedCount})
               </button>
             </div>
 
@@ -662,7 +662,7 @@ export default function QuizCustomCreatePage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder={`Cari ${getTypeLabel(contentType).toLowerCase()} atau arti...`}
+                  placeholder={`Search ${getTypeLabel(contentType).toLowerCase()} or meaning...`}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
@@ -688,7 +688,7 @@ export default function QuizCustomCreatePage() {
                         : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                     }`}
                   >
-                    {type === 'all' ? 'Semua' : type === 'unlearned' ? '📖 Belum Hafal' : '⭐ Favorit'}
+                    {type === 'all' ? 'All' : type === 'unlearned' ? 'Not Mastered' : 'Favorites'}
                   </button>
                 ))}
               </div>
@@ -696,11 +696,11 @@ export default function QuizCustomCreatePage() {
 
             {loadingItems ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <Loader2 className="w-6 h-6 animate-spin inline" /> Memuat...
+                <Loader2 className="w-6 h-6 animate-spin inline" /> Loading...
               </div>
             ) : filteredAvailableItems.length === 0 ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                Tidak ada item yang cocok.
+                No matching items.
               </div>
             ) : (
               <>
@@ -765,7 +765,7 @@ export default function QuizCustomCreatePage() {
                       className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition disabled:opacity-50"
                     >
                       {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                      {loadingMore ? 'Memuat...' : 'Muat lebih banyak'}
+                      {loadingMore ? 'Loading...' : 'Load more'}
                     </button>
                   </div>
                 )}

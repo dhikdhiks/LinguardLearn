@@ -3,7 +3,24 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { PlusCircle, Edit, Trash2, Play, Clock, Trophy, ChevronDown, ChevronUp, Link as LinkIcon, Upload } from 'lucide-react';
+import {
+  PlusCircle,
+  Edit,
+  Trash2,
+  Play,
+  ChevronDown,
+  ChevronUp,
+  Link as LinkIcon,
+  Upload,
+  Globe,
+  Keyboard,
+  ListChecks,
+  Shuffle,
+  BookOpen,
+  MessageSquare,
+  History,
+} from 'lucide-react';
+import { Button, Card, Chip, Skeleton, Spinner } from '@heroui/react';
 
 interface QuizSet {
   id: string;
@@ -80,13 +97,13 @@ export default function QuizCustomListPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Hapus kuis ini? Semua soal dan riwayat akan terhapus.')) return;
+    if (!confirm('Delete this quiz? All questions and history will be removed.')) return;
     try {
       await fetch(`/api/quiz-custom/sets/${id}`, { method: 'DELETE' });
       setSets(prev => prev.filter(s => s.id !== id));
     } catch (error) {
       console.error('Delete failed:', error);
-      alert('Gagal menghapus kuis');
+      alert('Failed to delete quiz');
     }
   };
 
@@ -94,9 +111,9 @@ export default function QuizCustomListPage() {
     const url = `${window.location.origin}/quiz-custom/${id}/play`;
     try {
       await navigator.clipboard.writeText(url);
-      alert('🔗 Link kuis berhasil disalin! Bagikan ke teman Anda.');
+      alert('Quiz link copied! Share it with your friends.');
     } catch (err) {
-      alert('Gagal menyalin link kuis');
+      alert('Failed to copy quiz link');
     }
   };
 
@@ -105,14 +122,36 @@ export default function QuizCustomListPage() {
   }, []);
 
   if (loading) {
-    return <div className="text-center py-12">⏳ Memuat daftar kuis...</div>;
+    return (
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <Skeleton animationType="shimmer" className="h-9 w-56" />
+            <Skeleton animationType="pulse" className="h-5 w-80" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton animationType="pulse" className="h-9 w-32" />
+            <Skeleton animationType="pulse" className="h-9 w-32" />
+          </div>
+        </div>
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i} className="p-4">
+              <Skeleton animationType="shimmer" className="h-7 w-2/3" />
+              <Skeleton animationType="pulse" className="mt-3 h-4 w-1/2" />
+              <Skeleton animationType="pulse" className="mt-2 h-4 w-1/3" />
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   const getContentTypeLabel = (type: string) => {
     switch (type) {
-      case 'vocabulary': return '📚 Kosakata';
-      case 'phrases': return '💬 Kalimat';
-      case 'mixed': return '🔀 Campuran';
+      case 'vocabulary': return 'Vocabulary';
+      case 'phrases': return 'Phrases';
+      case 'mixed': return 'Mixed';
       default: return type;
     }
   };
@@ -121,22 +160,22 @@ export default function QuizCustomListPage() {
     switch (dir) {
       case 'source_to_target': return 'EN → ID';
       case 'target_to_source': return 'ID → EN';
-      case 'mixed': return 'Campur';
+      case 'mixed': return 'Mixed';
       default: return dir;
     }
   };
 
   const getQuestionTypeLabel = (type: string) => {
     switch (type) {
-      case 'type_in': return '⌨️ Input Manual';
-      case 'multiple_choice': return '☑️ Pilihan Ganda';
-      case 'mixed': return '🔀 Campur';
+      case 'type_in': return 'Type In';
+      case 'multiple_choice': return 'Multiple Choice';
+      case 'mixed': return 'Mixed';
       default: return type;
     }
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('id-ID', {
+    return new Date(dateStr).toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -153,141 +192,157 @@ export default function QuizCustomListPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="mx-auto max-w-4xl">
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">🧪 Kuis Custom</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">
-            Buat kuis sendiri dari kata/kalimat yang kamu pilih. Cocok untuk hafalan targets.
+          <h1 className="text-3xl font-bold text-foreground">Quizzes</h1>
+          <p className="text-sm text-muted-foreground">
+            Build your own quizzes from the words and phrases you choose. Perfect for targeted practice.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             href="/quiz-custom/browse"
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm"
+            className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-purple-700"
           >
-            🌐 JELAJAH KUIS PUBLIK
+            <Globe className="h-4 w-4" /> Browse Public Quizzes
           </Link>
           <Link
             href="/quiz-custom/import"
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm"
+            className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-green-700"
           >
-            <Upload className="w-4 h-4" /> Import Soal
+            <Upload className="h-4 w-4" /> Import Questions
           </Link>
           <Link
             href="/quiz-custom/create"
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm"
+            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700"
           >
-            <PlusCircle className="w-4 h-4" /> Buat Kuis Baru
+            <PlusCircle className="h-4 w-4" /> New Quiz
           </Link>
         </div>
       </div>
 
       {sets.length === 0 ? (
-        <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
-          <p className="text-gray-500 dark:text-gray-400 text-lg mb-4">Belum ada kuis custom.</p>
+        <Card className="py-16 text-center">
+          <p className="mb-4 text-lg text-muted-foreground">No custom quizzes yet.</p>
           <Link
             href="/quiz-custom/create"
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
           >
-            <PlusCircle className="w-4 h-4" /> Buat Kuis Pertama
+            <PlusCircle className="h-4 w-4" /> Create Your First Quiz
           </Link>
-        </div>
+        </Card>
       ) : (
         <div className="space-y-4">
           {sets.map((quiz) => (
-            <div key={quiz.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <Card key={quiz.id} className="overflow-hidden">
               {/* Quiz Card Header */}
               <button
                 onClick={() => toggleExpand(quiz.id)}
-                className="w-full p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
+                className="flex w-full flex-col gap-3 p-4 text-left transition hover:bg-accent/50 sm:flex-row sm:items-center sm:justify-between"
               >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">{quiz.name}</h2>
-                    <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full">
-                      {getContentTypeLabel(quiz.contentType)}
-                    </span>
-                    <span className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-2 py-1 rounded-full">
-                      {getDirectionLabel(quiz.direction)}
-                    </span>
-                    <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded-full">
-                      {getQuestionTypeLabel(quiz.questionType)}
-                    </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h2 className="truncate text-xl font-bold text-foreground">{quiz.name}</h2>
+                    <Chip size="sm" variant="soft" color="accent">
+                      <Chip.Label className="flex items-center gap-1">
+                        {quiz.contentType === 'vocabulary' ? <BookOpen className="h-3 w-3" /> : quiz.contentType === 'phrases' ? <MessageSquare className="h-3 w-3" /> : <Shuffle className="h-3 w-3" />}
+                        {getContentTypeLabel(quiz.contentType)}
+                      </Chip.Label>
+                    </Chip>
+                    <Chip size="sm" variant="soft">
+                      <Chip.Label>{getDirectionLabel(quiz.direction)}</Chip.Label>
+                    </Chip>
+                    <Chip size="sm" variant="soft" color="success">
+                      <Chip.Label className="flex items-center gap-1">
+                        {quiz.questionType === 'type_in' ? <Keyboard className="h-3 w-3" /> : quiz.questionType === 'multiple_choice' ? <ListChecks className="h-3 w-3" /> : <Shuffle className="h-3 w-3" />}
+                        {getQuestionTypeLabel(quiz.questionType)}
+                      </Chip.Label>
+                    </Chip>
                     {quiz.isPublic && (
-                      <span className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-2 py-1 rounded-full">
-                        🌐 Publik
-                      </span>
+                      <Chip size="sm" variant="soft" color="warning">
+                        <Chip.Label className="flex items-center gap-1">
+                          <Globe className="h-3 w-3" /> Public
+                        </Chip.Label>
+                      </Chip>
                     )}
                   </div>
                   {quiz.description && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{quiz.description}</p>
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{quiz.description}</p>
                   )}
-                  <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    <span>Dibuat: {formatDate(quiz.createdAt)}</span>
-                    <span>Diupdate: {formatDate(quiz.updatedAt)}</span>
+                  <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                    <span>Created: {formatDate(quiz.createdAt)}</span>
+                    <span>Updated: {formatDate(quiz.updatedAt)}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex shrink-0 items-center gap-2">
                   <Link
                     href={`/quiz-custom/${quiz.id}/play`}
-                    className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition"
+                    onClick={e => e.stopPropagation()}
+                    className="flex items-center gap-1 rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-green-700"
                   >
-                    <Play className="w-4 h-4" /> Mulai
+                    <Play className="h-4 w-4" /> Start
                   </Link>
                   <Link
                     href={`/quiz-custom/create?edit=${quiz.id}`}
-                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded transition"
+                    onClick={e => e.stopPropagation()}
+                    className="rounded-lg p-2 text-muted-foreground transition hover:bg-accent hover:text-blue-600"
                     title="Edit"
                   >
-                    <Edit className="w-4 h-4" />
+                    <Edit className="h-4 w-4" />
                   </Link>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleShare(quiz.id); }}
-                    className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900 rounded transition"
-                    title="Salin link kuis"
+                    className="rounded-lg p-2 text-muted-foreground transition hover:bg-accent hover:text-green-600"
+                    title="Copy quiz link"
                   >
-                    <LinkIcon className="w-4 h-4" />
+                    <LinkIcon className="h-4 w-4" />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDelete(quiz.id); }}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded transition"
-                    title="Hapus"
+                    className="rounded-lg p-2 text-muted-foreground transition hover:bg-accent hover:text-red-600"
+                    title="Delete"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="h-4 w-4" />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleExpand(quiz.id); }}
-                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+                    className="rounded-lg p-2 text-muted-foreground transition hover:text-foreground"
                   >
-                    {expandedId === quiz.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    {expandedId === quiz.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </button>
                 </div>
               </button>
 
               {/* Expanded: Recent Attempts */}
               {expandedId === quiz.id && (
-                <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-medium text-gray-800 dark:text-white">📊 Riwayat Terbaru</h3>
+                <div className="border-t border-border bg-accent/30 p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="flex items-center gap-2 font-medium text-foreground">
+                      <History className="h-4 w-4" />
+                      Recent History
+                    </h3>
                     <Link
                       href={`/quiz-custom/${quiz.id}/history`}
                       className="text-xs text-blue-600 hover:underline"
                     >
-                      Lihat semua
+                      View all
                     </Link>
                   </div>
                   {loadingAttempts.has(quiz.id) ? (
-                    <div className="text-center py-4 text-gray-500 dark:text-gray-400">Memuat riwayat...</div>
+                    <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground">
+                      <Spinner size="sm" color="accent" />
+                      Loading history…
+                    </div>
                   ) : attempts[quiz.id]?.length === 0 ? (
-                    <div className="text-center py-4 text-gray-500 dark:text-gray-400">Belum ada riwayat main.</div>
+                    <div className="py-4 text-center text-muted-foreground">No attempts yet.</div>
                   ) : (
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                    <div className="max-h-64 space-y-2 overflow-y-auto">
                       {attempts[quiz.id]?.slice(0, 5).map((attempt) => (
-                        <div key={attempt.id} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
+                        <div key={attempt.id} className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
                           <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
+                            <div className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${
                               attempt.score >= 80 ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
                               attempt.score >= 50 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' :
                               'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
@@ -295,10 +350,10 @@ export default function QuizCustomListPage() {
                               {attempt.score}%
                             </div>
                             <div>
-                              <div className="text-sm font-medium text-gray-800 dark:text-white">
-                                {attempt.correctAnswers} / {attempt.totalQuestions} benar
+                              <div className="text-sm font-medium text-foreground">
+                                {attempt.correctAnswers} / {attempt.totalQuestions} correct
                               </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                              <div className="text-xs text-muted-foreground">
                                 {formatDate(attempt.startedAt)} • {formatDuration(attempt.durationSeconds)}
                               </div>
                             </div>
@@ -307,7 +362,7 @@ export default function QuizCustomListPage() {
                             href={`/quiz-custom/${quiz.id}/result/${attempt.id}`}
                             className="text-xs text-blue-600 hover:underline"
                           >
-                            Detail
+                            Details
                           </Link>
                         </div>
                       ))}
@@ -315,7 +370,7 @@ export default function QuizCustomListPage() {
                   )}
                 </div>
               )}
-            </div>
+            </Card>
           ))}
         </div>
       )}

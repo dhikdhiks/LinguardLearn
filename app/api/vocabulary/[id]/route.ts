@@ -41,7 +41,7 @@ export async function GET(
   const word = await getVocabularyWordWithFlags(session.user.id, id);
 
   if (!word) {
-    return NextResponse.json({ error: 'Kata tidak ditemukan' }, { status: 404 });
+    return NextResponse.json({ error: 'Word not found' }, { status: 404 });
   }
 
   const forms = await getVocabularyForms(id);
@@ -101,7 +101,7 @@ export async function PUT(
 
   if (existing.length > 0 && existing[0].id !== id) {
     return NextResponse.json(
-      { error: `Kata "${word}" sudah ada di kamus!` },
+      { error: `Word "${word}" is already in your dictionary!` },
       { status: 400 }
     );
   }

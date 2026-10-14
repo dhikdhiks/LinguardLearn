@@ -65,7 +65,7 @@ export async function GET(
     .limit(1);
 
   if (!set) {
-    return NextResponse.json({ error: 'Kuis tidak ditemukan' }, { status: 404 });
+    return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
   }
 
   const items = await db
@@ -97,7 +97,7 @@ export async function PUT(
     .limit(1);
 
   if (!set) {
-    return NextResponse.json({ error: 'Kuis tidak ditemukan' }, { status: 404 });
+    return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
   }
 
   try {
@@ -105,7 +105,7 @@ export async function PUT(
     const rawItems = Array.isArray(body?.items) ? body.items : null;
 
     if (!rawItems) {
-      return NextResponse.json({ error: 'Format items tidak valid' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid items format' }, { status: 400 });
     }
 
     // Validasi + dedupe berdasarkan (itemType, itemId)
@@ -123,10 +123,10 @@ export async function PUT(
       const itemType = raw?.itemType;
       const itemId = raw?.itemId;
       if (!itemType || !itemId) {
-        return NextResponse.json({ error: 'itemType dan itemId wajib diisi' }, { status: 400 });
+        return NextResponse.json({ error: 'itemType and itemId are required' }, { status: 400 });
       }
       if (!['vocabulary', 'phrases'].includes(itemType)) {
-        return NextResponse.json({ error: 'itemType harus vocabulary atau phrases' }, { status: 400 });
+        return NextResponse.json({ error: 'itemType must be vocabulary or phrases' }, { status: 400 });
       }
       const key = `${itemType}:${itemId}`;
       if (seen.has(key)) continue;
@@ -160,7 +160,7 @@ export async function PUT(
     return NextResponse.json(await enrichItems(saved as any));
   } catch (error) {
     console.error('Replace quiz items error:', error);
-    return NextResponse.json({ error: 'Gagal menyimpan soal' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to save questions' }, { status: 500 });
   }
 }
 
@@ -183,7 +183,7 @@ export async function POST(
     .limit(1);
 
   if (!set) {
-    return NextResponse.json({ error: 'Kuis tidak ditemukan' }, { status: 404 });
+    return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
   }
 
   try {
@@ -191,20 +191,20 @@ export async function POST(
     const { itemType, itemId, customQuestion, customAnswer } = body;
 
     if (!itemType || !itemId) {
-      return NextResponse.json({ error: 'itemType dan itemId wajib diisi' }, { status: 400 });
+      return NextResponse.json({ error: 'itemType and itemId are required' }, { status: 400 });
     }
 
     if (!['vocabulary', 'phrases'].includes(itemType)) {
-      return NextResponse.json({ error: 'itemType harus vocabulary atau phrases' }, { status: 400 });
+      return NextResponse.json({ error: 'itemType must be vocabulary or phrases' }, { status: 400 });
     }
 
     // Validasi item exists
     if (itemType === 'vocabulary') {
       const [vocab] = await db.select({ id: vocabulary.id }).from(vocabulary).where(eq(vocabulary.id, itemId)).limit(1);
-      if (!vocab) return NextResponse.json({ error: 'Kata tidak ditemukan' }, { status: 404 });
+      if (!vocab) return NextResponse.json({ error: 'Word not found' }, { status: 404 });
     } else {
       const [phrase] = await db.select({ id: phrases.id }).from(phrases).where(eq(phrases.id, itemId)).limit(1);
-      if (!phrase) return NextResponse.json({ error: 'Kalimat tidak ditemukan' }, { status: 404 });
+      if (!phrase) return NextResponse.json({ error: 'Phrase not found' }, { status: 404 });
     }
 
     // Cek duplikat
@@ -215,7 +215,7 @@ export async function POST(
       .limit(1);
 
     if (existing) {
-      return NextResponse.json({ error: 'Item sudah ada di kuis ini' }, { status: 400 });
+      return NextResponse.json({ error: 'Item already exists in this quiz' }, { status: 400 });
     }
 
     // Dapatkan sortOrder maksimal
@@ -241,6 +241,6 @@ export async function POST(
     return NextResponse.json(newItem);
   } catch (error) {
     console.error('Add quiz item error:', error);
-    return NextResponse.json({ error: 'Gagal menambah item' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to add item' }, { status: 500 });
   }
 }

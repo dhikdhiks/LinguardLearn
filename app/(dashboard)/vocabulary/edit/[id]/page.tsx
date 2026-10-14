@@ -54,7 +54,7 @@ export default function EditVocabularyPage() {
 
   useEffect(() => {
     if (!id) {
-      setError('ID tidak valid');
+      setError('Invalid ID');
       setLoading(false);
       return;
     }
@@ -94,7 +94,7 @@ export default function EditVocabularyPage() {
         setLoading(false);
       })
       .catch(() => {
-        setError('Gagal memuat data');
+        setError('Failed to load data');
         setLoading(false);
       });
   }, [id]);
@@ -141,14 +141,14 @@ export default function EditVocabularyPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Gagal menyimpan perubahan');
+        setError(data.error || 'Failed to save changes');
         setSaving(false);
         return;
       }
 
       router.push('/vocabulary');
     } catch {
-      setError('Terjadi kesalahan');
+      setError('Something went wrong');
       setSaving(false);
     }
   };
@@ -156,7 +156,7 @@ export default function EditVocabularyPage() {
   if (loading) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 dark:text-gray-400">⏳ Memuat data...</p>
+        <p className="text-gray-500 dark:text-gray-400">Loading data...</p>
       </div>
     );
   }
@@ -167,13 +167,13 @@ export default function EditVocabularyPage() {
         onClick={() => router.push('/vocabulary')}
         className="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white mb-4"
       >
-        <ArrowLeft className="w-4 h-4" /> Kembali ke Kamus
+        <ArrowLeft className="w-4 h-4" /> Back to Dictionary
       </button>
 
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">✏️ Edit Kata</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">✏️ Edit Word</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-          Ubah informasi kata di kamus Anda.
+          Update word information in your dictionary.
         </p>
 
         {error && (
@@ -185,7 +185,7 @@ export default function EditVocabularyPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Word */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Kata *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Word *</label>
             <input
               type="text"
               name="word"
@@ -199,7 +199,7 @@ export default function EditVocabularyPage() {
           {/* Translation + Part of Speech */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Terjemahan *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Translation *</label>
               <input
                 type="text"
                 name="translation"
@@ -210,7 +210,7 @@ export default function EditVocabularyPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Jenis Kata *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Part of Speech *</label>
               <select
                 name="partOfSpeech"
                 required
@@ -218,7 +218,7 @@ export default function EditVocabularyPage() {
                 onChange={handleChange}
                 className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
               >
-                <option value="">Pilih...</option>
+                <option value="">Select...</option>
                 <option value="noun">Noun</option>
                 <option value="verb">Verb</option>
                 <option value="adjective">Adjective</option>
@@ -260,7 +260,7 @@ export default function EditVocabularyPage() {
 
           {/* Definition */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Definisi</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Definition</label>
             <textarea
               name="definition"
               rows={2}
@@ -272,7 +272,7 @@ export default function EditVocabularyPage() {
 
           {/* Example Sentence */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Contoh Kalimat</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Example Sentence</label>
             <input
               type="text"
               name="exampleSentence"
@@ -325,18 +325,18 @@ export default function EditVocabularyPage() {
           {/* Related Word Forms (verb/noun/adjective/adverb) */}
           <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">🔗 Bentuk Kata Terkait</p>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">🔗 Related Word Forms</p>
               <button
                 type="button"
                 onClick={addFormRow}
                 className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium"
               >
-                <Plus className="w-4 h-4" /> Tambah Bentuk
+                <Plus className="w-4 h-4" /> Add Form
               </button>
             </div>
             {forms.length === 0 ? (
               <p className="text-xs text-gray-400 dark:text-gray-500">
-                Belum ada bentuk kata. Contoh: action (noun) → act (verb), active (adjective), actively (adverb).
+                No word forms yet. Example: action (noun) → act (verb), active (adjective), actively (adverb).
               </p>
             ) : (
               <div className="space-y-2">
@@ -346,7 +346,7 @@ export default function EditVocabularyPage() {
                       type="text"
                       value={f.form}
                       onChange={e => updateFormRow(i, 'form', e.target.value)}
-                      placeholder="kata bentuk (mis. act)"
+                      placeholder="word form (e.g. act)"
                       className="flex-1 px-2 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded text-sm"
                     />
                     <select
@@ -354,7 +354,7 @@ export default function EditVocabularyPage() {
                       onChange={e => updateFormRow(i, 'partOfSpeech', e.target.value)}
                       className="px-2 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded text-sm"
                     >
-                      <option value="">Jenis...</option>
+                      <option value="">Part of speech...</option>
                       {PARTS_OF_SPEECH.map(p => (
                         <option key={p} value={p}>{p}</option>
                       ))}
@@ -363,14 +363,14 @@ export default function EditVocabularyPage() {
                       type="text"
                       value={f.translation}
                       onChange={e => updateFormRow(i, 'translation', e.target.value)}
-                      placeholder="terjemahan"
+                      placeholder="translation"
                       className="flex-1 px-2 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded text-sm"
                     />
                     <button
                       type="button"
                       onClick={() => removeFormRow(i)}
                       className="p-1.5 text-gray-400 hover:text-red-500 transition self-end sm:self-center"
-                      title="Hapus bentuk"
+                      title="Remove form"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -390,7 +390,7 @@ export default function EditVocabularyPage() {
                 value={form.synonyms}
                 onChange={handleChange}
                 className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                placeholder="pisah koma"
+                placeholder="comma-separated"
               />
             </div>
             <div>
@@ -401,7 +401,7 @@ export default function EditVocabularyPage() {
                 value={form.antonyms}
                 onChange={handleChange}
                 className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                placeholder="pisah koma"
+                placeholder="comma-separated"
               />
             </div>
           </div>
@@ -415,13 +415,13 @@ export default function EditVocabularyPage() {
               value={form.tags}
               onChange={handleChange}
               className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              placeholder="pisah koma: Travel, Business, Technology"
+              placeholder="comma-separated: Travel, Business, Technology"
             />
           </div>
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Catatan</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
             <textarea
               name="notes"
               rows={2}
@@ -438,7 +438,7 @@ export default function EditVocabularyPage() {
             className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2.5 rounded-lg transition"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
+            {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
       </div>

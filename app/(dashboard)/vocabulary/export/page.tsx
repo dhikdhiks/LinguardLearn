@@ -14,7 +14,7 @@ export default function ExportPage() {
       const res = await fetch('/api/vocabulary/export');
       const data = await res.json();
       if (!Array.isArray(data)) {
-        alert('Gagal export: data tidak valid');
+        alert('Export failed: invalid data');
         return;
       }
 
@@ -82,7 +82,7 @@ export default function ExportPage() {
         URL.revokeObjectURL(url);
       }
     } catch (err) {
-      alert('Gagal export');
+      alert('Export failed');
     } finally {
       setLoading(false);
     }
@@ -94,11 +94,11 @@ export default function ExportPage() {
         onClick={() => router.push('/vocabulary')}
         className="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white mb-4"
       >
-        <ArrowLeft className="w-4 h-4" /> Kembali
+        <ArrowLeft className="w-4 h-4" /> Back
       </button>
       <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">📤 Ekspor Kosakata</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">Ekspor semua kosakata ke file JSON atau CSV.</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">📤 Export Vocabulary</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">Export all vocabulary to a JSON or CSV file.</p>
         <div className="flex gap-4">
           <button
             onClick={() => handleExport('json')}

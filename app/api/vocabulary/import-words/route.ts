@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
   const rawWords = Array.isArray(body?.words) ? body.words : null;
   if (!rawWords || rawWords.length === 0) {
-    return NextResponse.json({ error: 'Daftar kata kosong' }, { status: 400 });
+    return NextResponse.json({ error: 'Word list is empty' }, { status: 400 });
   }
 
   const words: string[] = Array.from(
@@ -61,11 +61,11 @@ export async function POST(req: NextRequest) {
       try {
         const e = await fetchDictionaryEntry(w);
         if (!e) {
-          failed.push(`${w} (tidak ditemukan)`);
+          failed.push(`${w} (not found)`);
           continue;
         }
         if (!e.translation) {
-          failed.push(`${w} (terjemahan tidak ditemukan)`);
+          failed.push(`${w} (translation not found)`);
           continue;
         }
         entries.push({

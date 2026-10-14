@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Loader2, Search, Volume2 } from 'lucide-react';
+import { Spinner } from '@heroui/react';
 
 export default function AddPhrasePage() {
   const router = useRouter();
@@ -27,7 +28,7 @@ export default function AddPhrasePage() {
   // ============================================================
   const handleAutoFill = async () => {
     if (!form.phrase.trim()) {
-      setError('Masukkan kalimat terlebih dahulu!');
+      setError('Please enter a phrase first!');
       return;
     }
 
@@ -39,7 +40,7 @@ export default function AddPhrasePage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Gagal menerjemahkan');
+        setError(data.error || 'Translation failed');
         setFetching(false);
         return;
       }
@@ -51,10 +52,10 @@ export default function AddPhrasePage() {
       }));
 
       if (!data.translation) {
-        setError('⚠️ Terjemahan tidak ditemukan, silakan isi manual.');
+        setError('⚠️ Translation not found, please fill in manually.');
       }
     } catch {
-      setError('Terjadi kesalahan saat menerjemahkan');
+      setError('Translation error occurred');
     } finally {
       setFetching(false);
     }
@@ -89,13 +90,13 @@ export default function AddPhrasePage() {
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Gagal menyimpan');
+        setError(data.error || 'Save failed');
         setLoading(false);
         return;
       }
       router.push('/phrases');
     } catch {
-      setError('Terjadi kesalahan');
+      setError('Something went wrong');
       setLoading(false);
     }
   };
@@ -106,13 +107,13 @@ export default function AddPhrasePage() {
         onClick={() => router.push('/phrases')}
         className="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white mb-4"
       >
-        <ArrowLeft className="w-4 h-4" /> Kembali
+        <ArrowLeft className="w-4 h-4" /> Back
       </button>
 
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">➕ Tambah Kalimat</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">➕ Add Phrase</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-          Masukkan kalimat, lalu klik <strong>"🔍 Cari"</strong> untuk terjemahan otomatis.
+          Enter a phrase, then click <strong>"🔍 Search"</strong> for automatic translation.
         </p>
 
         {error && (
@@ -125,7 +126,7 @@ export default function AddPhrasePage() {
           {/* Phrase + Auto-fill + Speak */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Kalimat (Phrase) *
+              Phrase *
             </label>
             <div className="flex gap-2 mt-1">
               <input
@@ -144,14 +145,14 @@ export default function AddPhrasePage() {
                 disabled={fetching}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition disabled:opacity-50 flex items-center gap-1"
               >
-                {fetching ? '⏳' : <Search className="w-4 h-4" />}
-                {fetching ? 'Memuat...' : 'Cari'}
+                {fetching ? <Spinner size="sm" color="current" /> : <Search className="w-4 h-4" />}
+                {fetching ? 'Loading...' : 'Search'}
               </button>
               <button
                 type="button"
                 onClick={handleSpeak}
                 className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-1"
-                title="Dengar pengucapan"
+                title="Hear pronunciation"
               >
                 <Volume2 className="w-4 h-4" />
               </button>
@@ -161,7 +162,7 @@ export default function AddPhrasePage() {
           {/* Translation */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Terjemahan (Translation) *
+              Translation *
             </label>
             <input
               type="text"
@@ -177,7 +178,7 @@ export default function AddPhrasePage() {
           {/* Phonetic */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Phonetic (Cara Baca)
+              Phonetic (Pronunciation)
             </label>
             <input
               type="text"
@@ -187,7 +188,7 @@ export default function AddPhrasePage() {
               className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
               placeholder="/haʊ ɑːr juː/"
             />
-            <p className="text-xs text-gray-400 mt-1">💡 Isi manual, atau gunakan tombol 🔊 untuk mendengar.</p>
+            <p className="text-xs text-gray-400 mt-1">💡 Fill it in manually, or use the 🔊 button to hear it.</p>
           </div>
 
           {/* Difficulty */}
@@ -214,13 +215,13 @@ export default function AddPhrasePage() {
               value={form.tags}
               onChange={handleChange}
               className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              placeholder="percakapan, formal"
+              placeholder="conversation, formal"
             />
           </div>
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Catatan</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
             <textarea
               name="notes"
               rows={2}
@@ -236,7 +237,7 @@ export default function AddPhrasePage() {
             className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2.5 rounded-lg transition"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {loading ? 'Menyimpan...' : 'Simpan'}
+            {loading ? 'Saving...' : 'Save'}
           </button>
         </form>
       </div>

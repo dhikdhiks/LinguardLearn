@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
 
     if (existing.length > 0) {
       return NextResponse.json(
-        { error: `Frasa "${phrase}" sudah ada!` },
+        { error: `Phrase "${phrase}" already exists!` },
         { status: 400 }
       );
     }

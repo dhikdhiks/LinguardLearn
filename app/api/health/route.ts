@@ -28,7 +28,7 @@ export async function GET() {
 
   if (!process.env.DATABASE_URL) {
     result.error =
-      'DATABASE_URL belum diset di environment server (Vercel → Settings → Environment Variables).';
+      'DATABASE_URL is not set in the server environment (Vercel → Settings → Environment Variables).';
     return NextResponse.json(result, { status: 500 });
   }
 
@@ -45,7 +45,7 @@ export async function GET() {
     result.ok = (result.missingTables as string[]).length === 0;
     if (!result.ok) {
       result.error =
-        'Ada tabel yang belum dibuat di database. Jalankan migration dari laptop: DATABASE_URL="<url-db-hosted>" pnpm db:migrate';
+        'Some database tables have not been created yet. Run the migration: DATABASE_URL="<hosted-db-url>" pnpm db:migrate';
     }
   } catch (err) {
     result.error =

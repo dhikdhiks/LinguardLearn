@@ -11,9 +11,10 @@ export default async function DashboardLayout({
   if (!session?.user) redirect('/login');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/50 dark:from-[#131314] dark:via-[#151517] dark:to-[#18181a]">
+    // Translucent backdrop so the interactive particle starfield shows through
+    <div className="min-h-screen bg-gradient-to-br from-slate-50/85 via-white/75 to-blue-50/40 dark:from-[#131314]/85 dark:via-[#151517]/80 dark:to-[#18181a]/75">
       <Navbar user={session.user} />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
     </div>

@@ -40,19 +40,19 @@ function clearAttempts(key: string) {
 // PESAN ERROR AUTH — bedakan "konfigurasi server"
 // (AUTH_SECRET/DATABASE_URL belum diatur) vs kredensial salah
 // ============================================
-function authErrorMessage(error: unknown, fallback = 'Email atau password salah.'): string {
+function authErrorMessage(error: unknown, fallback = 'Incorrect email or password.'): string {
   if (error instanceof AuthError) {
     const code =
       (error as AuthError & { code?: string }).code ||
       (error as AuthError & { type?: string }).type ||
       '';
-    // AUTH_SECRET / DATABASE_URL belum diset di server (mis. Vercel)
+    // AUTH_SECRET / DATABASE_URL not set on the server (e.g. Vercel)
     if (code === 'configuration' || error.name === 'MissingSecret') {
-      return 'Konfigurasi server belum lengkap (AUTH_SECRET / DATABASE_URL belum diatur di server). Coba lagi nanti.';
+      return 'Server configuration is incomplete (AUTH_SECRET / DATABASE_URL not set). Please try again later.';
     }
     return fallback;
   }
-  return 'Terjadi kesalahan server. Coba lagi nanti.';
+  return 'Server error. Please try again later.';
 }
 
 // ============================================
@@ -69,11 +69,11 @@ function validateRegister(input: {
   const password = input.password || '';
   const confirm = input.confirm || '';
 
-  if (name.length < 2) return 'Nama minimal 2 karakter.';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Format email tidak valid.';
-  if (password.length < 8) return 'Password minimal 8 karakter.';
-  if (password.length > 128) return 'Password terlalu panjang (maks 128 karakter).';
-  if (password !== confirm) return 'Konfirmasi password tidak cocok.';
+  if (name.length < 2) return 'Name must be at least 2 characters.';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Invalid email address.';
+  if (password.length < 8) return 'Password must be at least 8 characters.';
+  if (password.length > 128) return 'Password is too long (max 128 characters).';
+  if (password !== confirm) return 'Passwords do not match.';
   return null;
 }
 
@@ -103,7 +103,7 @@ export async function registerUser(
       .limit(1);
 
     if (existing.length > 0) {
-      return { error: 'Email sudah terdaftar. Silakan login.' };
+      return { error: 'This email is already registered. Please sign in.' };
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
@@ -128,14 +128,14 @@ export async function registerUser(
   } catch (error) {
     // signIn melempar AuthError (redirect) — biarkan lolos
     if (error instanceof AuthError) {
-      return { error: authErrorMessage(error, 'Registrasi gagal. Coba lagi.') };
+      return { error: authErrorMessage(error, 'Registration failed. Please try again.') };
     }
     // Next.js redirect error juga harus lolos
     if (error && typeof error === 'object' && 'digest' in error) {
       throw error;
     }
     console.error('Register error:', error);
-    return { error: 'Terjadi kesalahan server. Coba lagi nanti.' };
+    return { error: 'Server error. Please try again later.' };
   }
 }
 
@@ -150,12 +150,12 @@ export async function loginUser(
   const password = (formData.get('password') as string) || '';
 
   if (!email || !password) {
-    return { error: 'Email dan password wajib diisi.' };
+    return { error: 'Email and password are required.' };
   }
 
   if (isRateLimited(email)) {
     return {
-      error: 'Terlalu banyak percobaan gagal. Coba lagi dalam 15 menit.',
+      error: 'Too many failed attempts. Please try again in 15 minutes.',
     };
   }
 
@@ -175,7 +175,7 @@ export async function loginUser(
       throw error; // redirect Next.js
     }
     console.error('Login error:', error);
-    return { error: 'Terjadi kesalahan server. Coba lagi nanti.' };
+    return { error: 'Server error. Please try again later.' };
   }
 }
 

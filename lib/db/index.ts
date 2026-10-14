@@ -26,7 +26,7 @@ const connectionString =
 
 if (!connectionString) {
   throw new Error(
-    '❌ DATABASE_URL (atau POSTGRES_URL) belum diset! Tambahkan di .env.local atau Vercel Environment Variables.'
+    '❌ DATABASE_URL (or POSTGRES_URL) is not set! Add it in .env.local or Vercel Environment Variables.'
   );
 }
 

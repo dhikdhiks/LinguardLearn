@@ -1,20 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { RefreshCw, MessageSquare } from 'lucide-react';
+import { Button, Card, Skeleton } from '@heroui/react';
 
 interface Phrase {
   id: string;
   phrase: string;
-  translation: string;
+  translation: string | null;
   phonetic: string | null;
   difficulty: string | null;
 }
 
 function PhraseSkeleton() {
   return (
-    <div className="border-b border-gray-100 dark:border-gray-700 pb-2 animate-pulse">
-      <div className="h-5 w-3/4 bg-gray-200 dark:bg-gray-700 rounded mb-1" />
-      <div className="h-4 w-1/2 bg-gray-200 dark:bg-gray-700 rounded" />
+    <div className="border-b border-border pb-2 dark:border-gray-700">
+      <Skeleton animationType="shimmer" className="mb-1 h-4 w-3/4" />
+      <Skeleton animationType="pulse" className="h-3.5 w-1/2" />
     </div>
   );
 }
@@ -38,37 +40,40 @@ export default function PhrasesSection({ phrases }: { phrases: Phrase[] }) {
   if (phrases.length === 0) return null;
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mt-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-white">💬 Kalimat Sehari-hari</h2>
-        <button
+    <Card className="mt-6 p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+          <MessageSquare className="h-5 w-5 text-primary" />
+          Everyday Phrases
+        </h2>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={handleRefresh}
-          disabled={loading}
-          className="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+          isDisabled={loading}
+          className="flex items-center gap-1 text-primary"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
-        </button>
+        </Button>
       </div>
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {[...Array(6)].map((_, i) => (
             <PhraseSkeleton key={i} />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {randomPhrases.map((p) => (
-            <div key={p.id} className="border-b border-gray-100 dark:border-gray-700 pb-2">
-              <div className="font-medium text-gray-800 dark:text-white">{p.phrase}</div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">{p.translation}</div>
-              {p.phonetic && <div className="text-xs text-gray-400 font-mono">{p.phonetic}</div>}
+            <div key={p.id} className="border-b border-border pb-2 dark:border-gray-700">
+              <div className="font-medium text-foreground">{p.phrase}</div>
+              <div className="text-sm text-muted-foreground">{p.translation}</div>
+              {p.phonetic && <div className="font-mono text-xs text-muted-foreground">{p.phonetic}</div>}
             </div>
           ))}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
